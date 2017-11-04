@@ -5,4 +5,4 @@ from django.apps import AppConfig
 
 
 class SymantecVipConfig(AppConfig):
-    name = 'symantec_vip'
+    name = 'django_otp_vip'
