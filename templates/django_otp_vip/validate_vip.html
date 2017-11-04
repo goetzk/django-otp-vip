@@ -1,0 +1,65 @@
+<html>
+
+<body>
+
+<p>{{ request.user }}</p>
+
+<!-- from my 'working' multi factor template -->
+{% if formpush %}
+<p>Push auth is enabled</p>
+<form action="." method="post">
+    {% csrf_token %}
+    {{ formpush }}
+    <input type="submit" value="Send push" id="startClock" onclick="showDiv()" />
+</form>
+
+
+{# TODO: make button send signal then starts countdown #}
+{% comment %}
+progress bar https://stackoverflow.com/a/31106229
+Countdown text https://stackoverflow.com/a/31106382
+start timers on button https://stackoverflow.com/a/21670514
+display timers on buton https://stackoverflow.com/a/6957506
+Only one problem... when the button is clicked and the post occurs the timer isn't displayed.
+{% endcomment %}
+<script type="text/javascript">
+$("#startClock").click( function(){
+    var timeleft = 90;
+    var downloadTimer = setInterval(function(){
+    timeleft--;
+    document.getElementById("countdowntimer").textContent = timeleft;
+    document.getElementById("progressBar").value = timeleft;
+    if(timeleft <= 0)
+        clearInterval(downloadTimer);
+    },1000);
+});
+
+function showDiv() {
+   document.getElementById('count-down-timers').style.display = "block";
+   };
+</script>
+
+<div id='count-down-timers' style="display:none;" >
+<p>You have approximately <span id="countdowntimer">90</span> seconds until before push is timed out.</p>
+{# <progress value="0" max="90" id="progressBar"></progress> #}
+</div>
+{% endif %}
+
+
+{% if formtoken %}
+<p>Token input is enabled</p>
+<form action="" method="post">
+    {% csrf_token %}
+    {{ formtoken }}
+    <input type="submit" value="Validate code" />
+</form>
+{% endif %}
+
+{% if not formpush and not formtoken %}
+<p>No multi factor options enabled. You have been logged in, but please <a href="/contact/">Contact us</a> for assistance</p>
+{% endif %}
+
+</body>
+
+</html>
+
