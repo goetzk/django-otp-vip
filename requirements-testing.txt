@@ -1,0 +1,17 @@
+# For testing:
+pytest-cov
+pytest-django
+requests-mock
+
+# Check which code is covered in a run
+coverage
+
+# Docstring coverage - neither is REALLY what I want, but better than nothing.
+pydocstyle
+# docstring-coverage
+
+# Builds SVG graph of python module dependencies, can be handy
+pydeps
+
+# And if I really feel like going overboard
+# pylint

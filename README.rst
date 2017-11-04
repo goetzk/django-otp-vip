@@ -100,6 +100,12 @@ with a public mirror on GitHub (https://github.com/goetzk/django-otp-vip) for
 those who prefer it.
 
 
+Tests
+=====
+
+While this project does have tests they are currently in a state of flux and
+shouldn't be relied upon yet (Coverage from enabled tests is 50.85%).
+
 See also
 ========
 
