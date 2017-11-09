@@ -5,17 +5,17 @@ from django.contrib import admin
 
 # Register your models here.
 
-from .models import PushDevice, TokenDevice
+from .models import VipPushDevice, VipTokenDevice
 
 
-@admin.register(PushDevice)
+@admin.register(VipPushDevice)
 class PushDeviceAdmin(admin.ModelAdmin):
   """Provides administrative functions for the model."""
   readonly_fields = ['last_updated', 'latest_transaction_id']
   list_filter = ['last_updated', 'confirmed']
   search_fields = ['latest_transaction_id', 'user__username', 'confirmed']
 
-@admin.register(TokenDevice)
+@admin.register(VipTokenDevice)
 class TokenDeviceAdmin(admin.ModelAdmin):
   """Provides administrative functions for the model."""
   list_filter = [ 'confirmed']

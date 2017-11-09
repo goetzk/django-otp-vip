@@ -1,21 +1,37 @@
 
 from django import forms
 
-from django_otp_vip.models import TokenDevice, PushDevice
+from django_otp import devices_for_user
 
+from django_otp.forms import OTPTokenForm
 
-class TokenForm(forms.ModelForm):
+class TokenForm(OTPTokenForm):
   """Form for any device which involves text being submitted as part of
   verification"""
-  class Meta:
-      model = TokenDevice
-      fields = ['token_code']
+
+  def device_choices(self, user):
+    token_devices = []
+    for d in devices_for_user(user):
+      # This device is not a push token
+      if not d.is_interactive():
+        token_devices.append((d.persistent_id, d.name))
+    return token_devices
 
 
 
-class PushForm(forms.ModelForm):
-  """Form for any device which does verification externally"""
-  class Meta:
-      model = PushDevice
-      fields = []
+# For push devices (not used, so silly name)
+class PushForm(OTPTokenForm):
+  """Form for any device which involves OOB verification"""
+
+  def device_choices(self, user):
+    token_devices = []
+    for d in devices_for_user(user):
+      # This device is a push token
+      if d.is_interactive():
+        token_devices.append((d.persistent_id, d.name))
+    return token_devices
+
+# TODO: make form to add devices
+# - adding vip credentials needs a number of fields including a drop down selection for device type
+# - credential id must not contain spaces, azAZ09+# only
 

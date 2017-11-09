@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from django.shortcuts import render
+from django.http import HttpResponse
 
 from django.contrib.auth.decorators import login_required
 
@@ -12,23 +13,20 @@ from django_otp_vip.utils import send_user_auth_push, poll_user_auth_push, valid
 
 from django_otp_vip.forms import PushForm, TokenForm
 
+from django_otp.forms import OTPTokenForm
+
 import logging
 logger = logging.getLogger(__name__)
 
-
 @login_required
-def run_otp(request):
+def run_otp(request, display_template='django_otp_vip/validate_vip.html'):
   """This function is to perform 'other' user validation, for example 2nd factor
   checks. Override this view per the documentation if using this functionality.
   """
 
-  display_template='django_otp_vip/validate_vip.html'
-
   logger.debug('In run_otp view')
 
-  def perform_second_factor_pin(user, token_code):
-    return validate_token_data(user, token_code)
-
+  # TODO: finish killing off this code
   def perform_second_factor_push(user):
     """Send request for a second factor push to Symantec and poll for a result"""
     logger.debug('In run_otp\'s perform_second_factor_push function')
@@ -41,44 +39,58 @@ def run_otp(request):
     # This returns True or False depending on the result
     return poll_user_auth_push(auth_attempt.transaction_id)
 
+  # Update known details about user including devices
+  try:
+    updated_records = update_vip_user_records(request.user)
+  except Exception as ee:
+    # handle this better....
+    pass
+
+  if updated_records:
+    pass
+    # check the return code is success
+    # that we have a user
+    # that they have >= 1 device to validate with
+
   # if this is a POST request we need to process the form data
   if request.method == 'POST':
-      # create form instances and populate with data from the request
-      push_form = PushForm(request.POST)
-      token_form  = TokenForm(request.POST)
+      logger.debug('post method')
 
-      # If it isn't, perhaps the pin is valid
-      if token_form.is_valid():
-        if perform_second_factor_pin(request.user, token_form.cleaned_data['token_code']):
-          logger.debug('Second factor pin succeeded for %s' % request.user)
-          # If authentication succeeded, log in is ok
-          # return HttpResponse(request.session['saml_data'])
-          print "second factor token worked"
-        else:
-          logger.debug("Second factor pin failed; %s will not be permitted to log in" % request.user)
-          # Otherwise they should not be logging in.
-          logout(request)
-          # FIXME: return error text to user intead of generic 403
-          raise PermissionDenied("Second authentication factor failed")
+      # create form instances and populate with data from the request
+      # https://stackoverflow.com/a/20802107
+      # https://github.com/malept/pyoath-toolkit/blob/master/examples/django/example/views.py#L116
+      push_form = PushForm(request.user, request, data=request.POST)
+      token_form  = TokenForm(request.user, request, data=request.POST)
+
+      logger.debug(request.POST)
+
+      logger.debug('are either forms valid?')
+
+      # check if token is valid
+#       if token_form.is_valid():
+#         logger.debug('second factor token worked')
+#         return HttpResponse('/')
+#       else:
+#         logger.debug('token form errors')
+#         logger.debug(token_form.errors.as_data())
 
       # check if the push is valid
-      elif push_form.is_valid():
-        if perform_second_factor_push(request.user):
-          logger.debug('Second factor push succeeded for %s' % request.user)
-          # If authentication succeeded, log in is ok
-          # return HttpResponse(request.session['saml_data'])
-          print 'second factor push worked'
-        else:
-          logger.debug("Second factor push failed; %s will not be permitted to log in" % request.user)
-          # Otherwise they should not be logging in.
-          logout(request)
-          # FIXME: return error text to user intead of generic 403
-          raise PermissionDenied("Second authentication factor failed")
+      if push_form.is_valid():
+        logger.debug('second factor push worked')
+        return HttpResponse('push worked')
+#       else:
+#         logger.debug('push form errors')
+#         logger.debug(push_form.errors.as_data())
 
   # if a GET (or any other method) we'll create a blank form
   else:
-      push_form = PushForm()
-      token_form  = TokenForm()
+      logger.debug('creating some empty forms')
+      # if some push devices are available, show form. Otherwise don't show.
+      push_form = PushForm(request.user)
+      # ditto token devices
+      token_form  = TokenForm(request.user)
 
-  return render(request, display_template, {'formpush': push_form, 'formtoken': token_form})
+  # TODO: check if there are devices that will work with the two types of forms and if not set None
+ #  return render(request, display_template, {'formpush': push_form, 'formtoken': token_form })
+  return render(request, display_template, {'formpush': push_form })
 

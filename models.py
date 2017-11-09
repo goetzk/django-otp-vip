@@ -6,64 +6,75 @@ logger = logging.getLogger(__name__)
 
 from django.db import models
 
-# Create your models here.
+from django.contrib.auth.models import User as User
 
 from django_otp.models import Device as OTP_Device
 from utils import send_user_auth_push, poll_user_auth_push, validate_token_data
+from utils import query_user_info
+from utils import update_user_devices
 
 
-class PushDevice(OTP_Device):
-  """Records devices capable of receiving Symantec VIP push authentication
-  requests"""
-  last_updated = models.DateTimeField(auto_now=True, verbose_name='Updated at')
-  latest_transaction_id = models.CharField(max_length=30, editable=False)
-
-  def generate_challenge(self):
-    """Send request for a push to Symantec VIP servers
-    This method runs self.save() to record the transaction id.
-    """
-    logger.debug('Calling send_user_auth_push and recording its transaction ID')
-    auth_attempt = send_user_auth_push(self.user)
-    logger.debug('Auth attempt dictionary: %s' % auth_attempt.__dict__)
-    self.latest_transaction_id = auth_attempt.transaction_id
-    self.save(update_fields=['latest_transaction_id'])
-    return str('Sent (Check your device).')
-
-  def verify_token(self):
-    """Poll Symantec VIP service for a response to the push request"""
-    # Do we have a transaction ID to query?
-    if not self.latest_transaction_id:
-      return False
-    # poll_user_auth_push will run for the time configured in
-    # VIP_POLL_SLEEP_SECONDS times VIP_POLL_SLEEP_MAX_COUNT
-    logger.debug('Running poll_user_auth_push with transaction ID %s' % self.latest_transaction_id)
-    # This returns True or False depending on the result
-    return poll_user_auth_push(self.latest_transaction_id)
+# Create your models here.
 
 
-class TokenDevice(OTP_Device):
-  """Records VIP compatible devices which generate authentication codes"""
-  token_code = models.CharField(max_length=30, default='')
+class VipUser(models.Model):
+  user = models.OneToOneField(User, verbose_name='Members username')
+  # This should always be identical to user.email
+  vip_user_id = models.CharField(max_length=255, default=False)
+  vip_created_at = models.DateTimeField(verbose_name='Creation time per VIP API', blank=True)
+  status = models.CharField(max_length=10, default=False) # Could be Active, Locked, disabled
+  bindings_count = models.PositiveSmallIntegerField(default=0)
+  pin_set = models.NullBooleanField(default=False, null=True)
+  pin_expiration_time = models.NullBooleanField(default=False, null=True)
+  temp_password_set = models.DateTimeField(null=True, blank=True)
 
-  def verify_token(self, token):
-    """Check with Symantec VIP service if this token should be considered
-    valid"""
-    self.token_code = token
-    self.save()
-    logger.debug("Calling validate_token_data with user {0} and token {1}".format(self.user, token))
-    return validate_token_data(self.user, token)
+  def __unicode__(self):
+    """Return model description based on user name and user id."""
+    return '%s (%s)' % (self.user.username, self.vip_user_id)
 
-# FIXME: Do these two have existing classes i can override?
-# TODO: This will have to wait until I have a chance to set up SMS on VIP
-# class SmsDevice(OTP_Device):
-#   """Records devices which can receive SMS' via VIP"""
-#   # FIXME: needs to check if user has specified phone number. Bail if they haven't.
-# if phone nubmer in user profile, use it, else number passed as param to init, use it. else fail
-#   pass
+class VipBaseCredential(OTP_Device):
+  """Abstract base class for other VIP credentials.
 
-# class CallDevice(OTP_Device)
-#   """Records devices which can receive a call via VIP"""
-#   # FIXME: needs to check if user has specified phone number. Bail if they haven't.
-# if phone nubmer in user profile, use it, else number passed as param to init, use it. else fail
-#   pass
+  Values common to all VIP Credentials, this is the majority of the specification
+  for all current types of devices.
+
+  https://docs.djangoproject.com/en/1.11/topics/db/models/#abstract-base-classes
+  """
+
+  # As of writing, the following come from OTP_Device:
+  # user (FK, user object)
+  # name (string, human friendly name for 'token' (credential)), used to store friendlyName data
+  # confirmed (bool, has this been confirmed valid.)
+
+  credential_id = models.CharField(max_length=20, default=False, unique=True)
+  credential_type = models.CharField(max_length=20, default=False)
+  credential_status = models.CharField(max_length=20, default=None)
+  token_form_factor = models.CharField(max_length=20, default=False)
+  token_kind = models.CharField(max_length=20, default=False)
+  token_adaptor = models.CharField(max_length=20, default=False)
+  token_status = models.CharField(max_length=20, default=False)
+  token_expiration_date = models.DateTimeField()
+  token_last_update = models.DateTimeField()
+  bind_status = models.CharField(max_length=20, default=False)
+  bind_time = models.DateTimeField()
+  friendly_name = models.CharField(max_length=20, default=False)
+  last_authn_time = models.DateTimeField()
+  # Same as transaction_id?
+  last_authn_id = models.CharField(max_length=20, default=False, null=True)
+  push_enabled = models.BooleanField(default=False)
+
+  def refresh_records(self):
+    user_devices = query_user_device_details
+
+    # FIXME: this should say 'if the key credential_id is in the list of dicts'
+    if self.credential_id in user_devices:
+      update_user_devices([self.credential_id])
+
+  def save(self, *args, **kwargs):
+    """Override save to modify 'confirmed' status."""
+    if self.token_status and self.bind_status and self.credential_status:
+      self.confirmed = True
+    else:
+      self.confirmed = False
+    super(VipBaseCredential, self).save(*args, **kwargs)
 

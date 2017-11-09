@@ -4,7 +4,7 @@ logger = logging.getLogger(__name__)
 
 # Import configuration
 from .settings import VIP_CERTIFICATE_PUBLIC, VIP_CERTIFICATE_PRIVATE
-from .settings import VIP_WSDL_USERSERVICES_QUERY, VIP_WSDL_USERSERVICES_AUTH
+from .settings import VIP_WSDL_USERSERVICES_QUERY, VIP_WSDL_USERSERVICES_AUTH, VIP_WSDL_USERSERVICES_MGMT
 
 # Suppress InsecureRequestWarning from urllib3
 # The InsecureRequestWarning from urllib3 says to look at
@@ -47,7 +47,8 @@ transport = Transport(session=session)
 logger.debug('Creating api clients')
 query_client = zeep.Client( wsdl=VIP_WSDL_USERSERVICES_QUERY, transport=transport)
 auth_client = zeep.Client( wsdl=VIP_WSDL_USERSERVICES_AUTH, transport=transport)
-# TODO: re add mgmt_client
+mgmt_client =  zeep.Client( wsdl=VIP_WSDL_USERSERVICES_MGMT, transport=transport)
+
 
 def make_request_id():
   """Utility function to produce a unique ID for each request"""
@@ -62,4 +63,30 @@ def poll_push_status(transaction_ids = [] ):
 
 def authenticate_user(user_id, otp_auth_data={}):
   return auth_client.service.authenticateUser(requestId=make_request_id(), userId = user_id, otpAuthData = otp_auth_data)
+
+def get_user_info(user_id, **kwargs):
+
+  return query_client.service.getUserInfo(requestId=make_request_id(), userId = user_id, **kwargs )
+
+
+def create_user(user_id):
+  return mgmt_client.service.createUser(requestId=make_request_id(), userId = user_id)
+
+
+def update_user(user_id, new_user_status='ACTIVE', new_user_id=None):
+# updateUser (including disable access)
+
+# newUserId is required if user is changing email address
+# newUserStatus is optional, value can be ACTIVE or DISABLED. This is how users are disabled/re-enabled!
+  return mgmt_client.service.updateUser(requestId=make_request_id(), userId = user_id, newUserStatus=new_user_status)
+
+
+def add_device_to_user(user_id, credential_id, credential_type = 'STANDARD_OTP', friendly_name = None):
+# This one is a bit more complicated! 
+  return mgmt_client.service.addCredential(requestId=make_request_id(), userId = user_id,
+                        credentialDetail = { 
+                            'credentialId' : credential_id.replace(' ', ''),
+                            'credentialType' : credential_type,
+                            'friendlyName' : friendly_name
+                            })
 
