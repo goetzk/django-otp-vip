@@ -65,12 +65,17 @@ def update_user_credentials(supplied_data):
     user_credentials = supplied_data['credentialBindingDetail']
     user = discover_user_from_email(supplied_data['userId'])
   else:
-    # Assume everuthign is ok
+    # FIXME: Assumes everything is ok
+    logger.debug('No userId found, assuming we were passed user credentials')
     user_credentials = supplied_data
 
   if not user_credentials:
     logger.debug('No credentials to update')
     return True
+
+  if not user:
+    logger.debug('Unable to create or update credential without user object')
+    return False
 
   logger.debug('looping %s credentials' % len(user_credentials))
   for current_credential in user_credentials:
@@ -88,9 +93,6 @@ def update_user_credentials(supplied_data):
       logger.debug('Active record is %s, based on credential %s' % (record, current_credential['credentialId']))
     except VipBaseCredential.DoesNotExist:
       logger.debug('No record found for credential %s' % current_credential['credentialId'])
-      if not user:
-        logger.debug('Unable to create new credential without user object')
-        return False
 
       if push_enabled_credential:
         logger.debug('Creating with VipPushCredential type')
@@ -140,6 +142,9 @@ def update_user_record(info_from_api):
 
   try:
     user_details = current_user.vipuser
+  except AttributeError as ae:
+    logger.debug('Unable to map %s to a user: can\'t update record' % info_from_api['userId'])
+    return False
   except VipUser.DoesNotExist as rodne:
     logger.debug('No existing VipUser object for %s, creating one now' % info_from_api['userId'])
     user_details = VipUser()
@@ -161,12 +166,16 @@ def discover_user_from_email(email):
   Pass in an email address and a user object will be returned.
   None if no user found
   """
+  if not email:
+    logger.debug('discover_user_from_email requires an email be passed')
+    return None
+
   user_list = User.objects.filter(email=email)
   if not user_list:
     print 'No local user with email %s, unable to continue' % email
     return None
   if len(user_list) > 1:
-    print 'Warning, %s has multiple accounts in local system (%s), returning first' % (email, user_list)
+    logger.debug('Warning, %s has multiple accounts in local system (%s), returning first' % (email, user_list))
 
   return user_list[0]
 
