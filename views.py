@@ -44,7 +44,8 @@ def run_otp(request, display_template='django_otp_vip/validate_vip.html'):
     updated_records = update_vip_user_records(request.user)
   except Exception as ee:
     # handle this better....
-    pass
+    print 'balalhasdlhfaldfh'
+    print ee
 
   if updated_records:
     pass
