@@ -9,7 +9,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.core.exceptions import ImproperlyConfigured, PermissionDenied
 
-from django_otp_vip.device_models import send_user_auth_push, poll_user_auth_push
+from django_otp_vip.credential_models import send_user_auth_push, poll_user_auth_push
 
 from django_otp_vip.forms import PushForm, TokenForm
 
@@ -39,7 +39,7 @@ def run_otp(request, display_template='django_otp_vip/validate_vip.html'):
     # This returns True or False depending on the result
     return poll_user_auth_push(auth_attempt.transaction_id)
 
-  # Update known details about user including devices
+  # Update known details about user including credentials
   try:
     updated_records = update_vip_user_records(request.user)
   except Exception as ee:
@@ -51,7 +51,7 @@ def run_otp(request, display_template='django_otp_vip/validate_vip.html'):
     pass
     # check the return code is success
     # that we have a user
-    # that they have >= 1 device to validate with
+    # that they have >= 1 credential to validate with
 
   # if this is a POST request we need to process the form data
   if request.method == 'POST':
@@ -86,9 +86,9 @@ def run_otp(request, display_template='django_otp_vip/validate_vip.html'):
   # if a GET (or any other method) we'll create a blank form
   else:
       logger.debug('creating some empty forms')
-      # if some push devices are available, show form. Otherwise don't show.
+      # if some push credentials are available, show form. Otherwise don't show.
       push_form = PushForm(request.user)
-      # ditto token devices
+      # ditto token credentials
       token_form  = TokenForm(request.user)
 
   # TODO: check if there are devices that will work with the two types of forms and if not set None

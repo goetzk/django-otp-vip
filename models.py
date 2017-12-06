@@ -11,7 +11,7 @@ from django.contrib.auth.models import User as User
 from django_otp.models import Device as OTP_Device
 
 
-# VIP device models are in device_models.py
+# VIP credential models are in credential_models.py
 
 class VipUser(models.Model):
   user = models.OneToOneField(User, verbose_name='Members username')
@@ -42,6 +42,7 @@ class VipBaseCredential(OTP_Device):
   # name (string, human friendly name for 'token' (credential)), used to store friendlyName data
   # confirmed (bool, has this been confirmed valid.)
 
+# FIXME: These all come from a software token and many may not actually be universal
   credential_id = models.CharField(max_length=20, default=False, unique=True)
   credential_type = models.CharField(max_length=20, default=False)
   credential_status = models.CharField(max_length=20, default=None)

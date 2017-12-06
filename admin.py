@@ -5,7 +5,7 @@ from django.contrib import admin
 
 # Register your models here.
 
-from .device_models import VipPushDevice, VipTokenDevice
+from .credential_models import VipPushCredential, VipTokenCredential
 from models import VipUser
 
 
@@ -17,8 +17,8 @@ class UserAdmin(admin.ModelAdmin):
   list_display = ['user', 'vip_user_id', 'status', 'vip_created_at', 'bindings_count']
   search_fields = ['vip_user_id', 'user__username', '']
 
-@admin.register(VipPushDevice)
-class PushDeviceAdmin(admin.ModelAdmin):
+@admin.register(VipPushCredential)
+class PushCredentialAdmin(admin.ModelAdmin):
   """Provides administrative functions for the model."""
   # FIXME: all fields read only
   readonly_fields = ['credential_id']
@@ -26,8 +26,8 @@ class PushDeviceAdmin(admin.ModelAdmin):
   search_fields = ['credential_id', 'user__username', 'token_kind', 'token_adaptor', 'push_enabled', 'friendly_name']
   list_display = ['user', 'credential_id', 'credential_type', 'friendly_name', 'last_authn_time']
 
-@admin.register(VipTokenDevice)
-class TokenDeviceAdmin(admin.ModelAdmin):
+@admin.register(VipTokenCredential)
+class TokenCredentialAdmin(admin.ModelAdmin):
   """Provides administrative functions for the model."""
   list_filter = [ 'confirmed']
   search_fields = ['latest_transaction_id', 'user__username', 'confirmed']

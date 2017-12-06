@@ -81,7 +81,7 @@ def update_user(user_id, new_user_status='ACTIVE', new_user_id=None):
   return mgmt_client.service.updateUser(requestId=make_request_id(), userId = user_id, newUserStatus=new_user_status)
 
 
-def add_device_to_user(user_id, credential_id, credential_type = 'STANDARD_OTP', friendly_name = None):
+def add_credential_to_user(user_id, credential_id, credential_type = 'STANDARD_OTP', friendly_name = None):
 # This one is a bit more complicated! 
   return mgmt_client.service.addCredential(requestId=make_request_id(), userId = user_id,
                         credentialDetail = { 
