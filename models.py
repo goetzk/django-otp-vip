@@ -9,13 +9,9 @@ from django.db import models
 from django.contrib.auth.models import User as User
 
 from django_otp.models import Device as OTP_Device
-from utils import send_user_auth_push, poll_user_auth_push, validate_token_data
-from utils import query_user_info
-from utils import update_user_devices
 
 
-# Create your models here.
-
+# VIP device models are in device_models.py
 
 class VipUser(models.Model):
   user = models.OneToOneField(User, verbose_name='Members username')

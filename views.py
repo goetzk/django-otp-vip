@@ -9,7 +9,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.core.exceptions import ImproperlyConfigured, PermissionDenied
 
-from django_otp_vip.utils import send_user_auth_push, poll_user_auth_push, validate_token_data
+from django_otp_vip.device_models import send_user_auth_push, poll_user_auth_push
 
 from django_otp_vip.forms import PushForm, TokenForm
 
