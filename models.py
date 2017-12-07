@@ -60,12 +60,8 @@ class VipBaseCredential(OTP_Device):
   last_authn_id = models.CharField(max_length=20, default=False, null=True)
   push_enabled = models.BooleanField(default=False)
 
-  def refresh_records(self):
-    user_devices = query_user_device_details
-
-    # FIXME: this should say 'if the key credential_id is in the list of dicts'
-    if self.credential_id in user_devices:
-      update_user_devices([self.credential_id])
+  class Meta:
+    abstract = True
 
   def save(self, *args, **kwargs):
     """Override save to modify 'confirmed' status."""
