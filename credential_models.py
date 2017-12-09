@@ -61,8 +61,6 @@ def process_token_credential(user_obj, credential_json):
 
   save_modified_record(record, user_obj, credential_json)
 
-
-
 def process_push_credential(user_obj, credential_json):
   """Set up push credential object ready to be saved.
 

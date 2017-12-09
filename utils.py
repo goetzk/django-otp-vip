@@ -1,3 +1,9 @@
+"""Utility functions.
+
+Most of these are wrappers around the API, but some are helpers created for
+other purposes.
+"""
+
 # Set up logging first thing
 import logging
 logger = logging.getLogger(__name__)
@@ -37,11 +43,14 @@ def disable_remote_vip_user(email):
 
 # TODO: combine these two methods
 def query_user_info(user):
-  """ Does not include full information wrt credentials"""
+  """Query APi for user details.
+  
+  Does not include full information wrt credentials.
+  """
   user_details = get_user_info(user)
 
 def query_user_credential_details(user):
-  """extensive information about the credentials, probably more than is needed"""
+  """Extensive information about the credentials."""
   user_details = get_user_info(user, includePushAttributes=True, includeTokenInfo=True)
   if user_details.status == '0000':
     # a list
@@ -51,13 +60,19 @@ def query_user_credential_details(user):
     return []
 
 def add_credential_to_vip():
+  """Add new credential to users VIP account.
+
+  TODO: add call to add_credential_to_user()
+  """
   pass
 
 def update_user_credentials(supplied_data):
-  """Take a list of credentials (as returned by query_user_credential_details) or the
-  full user details and update each of them in the db.
-  Returns true or false to indicate success or failure"""
-
+  """Update credential records in DB.
+  
+  Take a list of credentials (as returned by query_user_credential_details) or
+  the full user details and update each of them in the db.
+  Returns true or false to indicate success or failure.
+  """
   logger.debug('in update_user_credentials')
   logger.debug(supplied_data)
   if 'userId' in supplied_data:
@@ -127,8 +142,10 @@ def update_user_credentials(supplied_data):
     return True
 
 def update_user_record(info_from_api):
-  """accepts a dict, as returned by query_user_info
-  Returns True or False to indicate success or failure
+  """Update VIP user data stored in DB.
+  
+  Accepts a dict, as returned by query_user_info
+  Returns True or False to indicate success or failure.
   """
   # Locate record
   try:
@@ -162,7 +179,10 @@ def update_user_record(info_from_api):
   return True
 
 def discover_user_from_email(email):
-  """TODO: share this in oh so many parts of our codebase
+  """Establish the local user from email address.
+  
+  TODO: Consider removing from this app.
+  TODO: share this in oh so many parts of our codebase
   Pass in an email address and a user object will be returned.
   None if no user found
   """
@@ -180,6 +200,7 @@ def discover_user_from_email(email):
   return user_list[0]
 
 def update_vip_user_records(user):
+  """Update both user and credential DB records."""
   full_user_details = get_user_info(user.email, includePushAttributes=True, includeTokenInfo=True)
   if not full_user_details.status == '0000':
     print('user does not exist, logging of error will occur later')

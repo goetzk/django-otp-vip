@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+"""Custom views for VIP.
+
+These views aim to aid in deploying a VIP compatible app.
+"""
 from __future__ import unicode_literals
 
 from django.shortcuts import render
@@ -20,15 +24,16 @@ logger = logging.getLogger(__name__)
 
 @login_required
 def run_otp(request, display_template='django_otp_vip/validate_vip.html'):
-  """This function is to perform 'other' user validation, for example 2nd factor
+  """Perform second factor.
+  
+  This function is to perform 'other' user validation, for example 2nd factor
   checks. Override this view per the documentation if using this functionality.
   """
-
   logger.debug('In run_otp view')
 
   # TODO: finish killing off this code
   def perform_second_factor_push(user):
-    """Send request for a second factor push to Symantec and poll for a result"""
+    """Send request for a second factor push to Symantec and poll for a result."""
     logger.debug('In run_otp\'s perform_second_factor_push function')
 
     # FIXME: catch errors and return PermissionDenied + helpful error

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Generic and base models."""
 from __future__ import unicode_literals
 
 import logging
@@ -14,6 +15,12 @@ from django_otp.models import Device as OTP_Device
 # VIP credential models are in credential_models.py
 
 class VipUser(models.Model):
+  """VIP user specification.
+
+  All information we've retrieved about this user from the API is recorded in
+  this model.
+  """
+
   user = models.OneToOneField(User, verbose_name='Members username')
   # This should always be identical to user.email
   vip_user_id = models.CharField(max_length=255, default=False)
@@ -61,6 +68,11 @@ class VipBaseCredential(OTP_Device):
   push_enabled = models.BooleanField(default=False)
 
   class Meta:
+    """Class meta configuration.
+
+    Currently only abstract = True is defined here
+    """
+
     abstract = True
 
   def save(self, *args, **kwargs):

@@ -1,3 +1,8 @@
+"""
+Settings for this app.
+
+I still view this as temporary, I'm sure there is a better way to do this.
+"""
 # https://docs.djangoproject.com/en/1.8/topics/settings/#using-settings-in-python-code
 
 import os

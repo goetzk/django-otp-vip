@@ -1,4 +1,4 @@
-
+"""VIP URLs configuration."""
 from django.conf.urls import url
 
 from django_otp_vip.views import run_otp

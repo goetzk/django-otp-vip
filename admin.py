@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+"""Set up Django Admin to access VIP records.
+
+These are purely for viewing purposes
+"""
 from __future__ import unicode_literals
 
 from django.contrib import admin
@@ -11,7 +15,8 @@ from models import VipUser
 
 @admin.register(VipUser)
 class UserAdmin(admin.ModelAdmin):
-  """Provides administrative functions for the model."""
+  """Provides administrative functions for the VIP User ."""
+
   readonly_fields = ['vip_user_id', 'vip_created_at', 'status', 'bindings_count', 'pin_set', 'pin_expiration_time', 'temp_password_set']
   list_filter = ['vip_created_at', 'status', 'temp_password_set', 'pin_expiration_time']
   list_display = ['user', 'vip_user_id', 'status', 'vip_created_at', 'bindings_count']
@@ -19,7 +24,8 @@ class UserAdmin(admin.ModelAdmin):
 
 @admin.register(VipPushCredential)
 class PushCredentialAdmin(admin.ModelAdmin):
-  """Provides administrative functions for the model."""
+  """Provides administrative functions for VIP Push credentials."""
+
   # FIXME: all fields read only
   readonly_fields = ['credential_id']
   list_filter = ['credential_type', 'credential_status', 'token_form_factor', 'token_kind', 'last_authn_time']
@@ -28,7 +34,8 @@ class PushCredentialAdmin(admin.ModelAdmin):
 
 @admin.register(VipTokenCredential)
 class TokenCredentialAdmin(admin.ModelAdmin):
-  """Provides administrative functions for the model."""
+  """Provides administrative functions for VIP Token credentials."""
+
   list_filter = [ 'confirmed']
   search_fields = ['latest_transaction_id', 'user__username', 'confirmed']
 
