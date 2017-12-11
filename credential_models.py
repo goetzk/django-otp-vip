@@ -15,6 +15,9 @@ import time
 from .models import VipBaseCredential
 from otp_vip import utils
 
+VIP_POLL_SLEEP_SECONDS = 10
+VIP_POLL_SLEEP_MAX_COUNT = 10
+
 def save_modified_record(record, user_obj, credential_json):
   """Update and save credential DB entries.
 

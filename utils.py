@@ -8,9 +8,6 @@ other purposes.
 import logging
 logger = logging.getLogger(__name__)
 
-# Import configuration
-from .settings import VIP_POLL_SLEEP_SECONDS, VIP_POLL_SLEEP_MAX_COUNT
-
 # For now()
 import datetime
 

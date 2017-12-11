@@ -6,92 +6,31 @@ All API calls are collated in to this module.
 import logging
 logger = logging.getLogger(__name__)
 
-# To determine project path
-import os
-
-# For now()
-import datetime
-
-# For sleep()
-import time
-
 # For request IDs
 import uuid
 
-# soap library
-import zeep
+from .api_configuration import ConfigureClients
 
-# Needed to suppress InsecureRequestWarning
-import urllib3
+# Set up clients
+config_class = ConfigureClients()
+auth_client = config_class.auth_client
+mgmt_client = config_class.mgmt_client
+query_client = config_class.query_client
 
-# Modifying the session
-import requests
-
-# Suppress InsecureRequestWarning from urllib3
-# The InsecureRequestWarning from urllib3 says to look at
-# https://urllib3.readthedocs.io/en/latest/user-guide.html#ssl-py2
-# Ignore that and look at https://stackoverflow.com/a/28002687
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-# Restructure in the spirit of https://github.com/bennylope/pydiscourse/blob/master/pydiscourse/client.py
-class VIPClient():
-  """Symantec VIP SOAP API endpoint client"""
-
-  def __init__(self,
-                custom_session = None,
-                custom_transport = None,
-                public_cert  = os.path.dirname(__file__) + '/certs/' + 'user_services_public.crt',
-                private_cert = os.path.dirname(__file__) + '/certs/' + 'user_services_decrypted.key',
-                auth_wsdl  =   os.path.dirname(__file__) + '/wsdls/' + 'vipuserservices-query-1.8.wsdl',
-                mgmt_wsdl  =   os.path.dirname(__file__) + '/wsdls/' + 'vipuserservices-auth-1.8.wsdl',
-                query_wsdl =   os.path.dirname(__file__) + '/wsdls/' + 'vipuserservices-mgmt-1.8.wsdl',
-                *args, **kwargs):
-    """Initialise API client(s!)
-
-    Args:
-      custom_session: requests.Session() object. This REPLACES the class internal session so you are required to do all session setup.
-      custom_transport: zeep.transports.Transport() object. This REPLACES the class internal transport so you are required to do all transport setup.
-      public_cert Public half of the SSL certificate used to authenticate with Symantec VIP
-      private_cert: Private half of the SSL certificate used to authenticate with Symantec VIP
-      auth_wsdl: Location of Authentication API endpoints WSDL file in a zeep.Client() compatible location
-      mgmt_wsdl: Location of Management API endpoints WSDL file in a zeep.Client() compatible location
-      query_wsdl: Location of Query API endpoints WSDL file in a zeep.Client() compatible location
-      *args, **kwargs)
-    """
-
-    self.session = custom_session
-    self.transport = custom_transport
-    self.certificate_public_half = public_cert
-    self.certificate_private_half = private_cert
-    self.auth_wsdl = auth_wsdl
-    self.mgmt_wsdl = mgmt_wsdl
-    self.query_wsdl = query_wsdl
-
-    if not self.session:
-      # Will use requests to set certificate
-      # http://docs.python-requests.org/en/latest/user/advanced/#client-side-certificates
-      # TODO: try/except this
-      logger.debug('Setting up custom Requests Session()')
-      self.session = requests.Session()
-
-      # "SSLError(SSLError(1, u'[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure" and similar mean: add certificates
-      logger.debug('Importing certificates')
-      self.session.cert = (self.certificate_public_half, self.certificate_private_half)
-
-    if not self.transport:
-      # http://docs.python-zeep.org/en/master/transport.html?highlight=requests#ssl-verification
-      logger.debug('Creating custom Zeep transport')
-      self.transport = zeep.transports.Transport(session=self.session)
-
-    # Create client instances
-    logger.debug('Creating API clients')
-    auth_client = zeep.Client( wsdl=self.auth_wsdl, transport=self.transport)
-    mgmt_client =  zeep.Client( wsdl=self.mgmt_wsdl, transport=self.transport)
-    query_client = zeep.Client( wsdl=self.query_wsdl, transport=self.transport)
-
+# TODO: this either needs to be in the plugin egress or a top level method
+# depending on if the plugin starts working (obviously not working atm)
 def make_request_id():
-  """Produce a unique ID for each request."""
+  """Produce a unique ID for each request.
+
+  Args:
+    None
+
+  Returns:
+    UUID4 string with - replaced by _
+
+  """
   return str(uuid.uuid4()).replace('-', '_')
+
 
 def authenticate_user_with_push(user_id, push_auth_data={}):
   """Trigger a push authentication request via Symantec."""
@@ -140,11 +79,12 @@ def update_user(user_id, new_user_status=None, new_user_id=None):
 
 def add_credential_to_user(user_id, credential_id, credential_type = 'STANDARD_OTP', friendly_name = None):
   """Add a new credential to an existing user."""
-  # This one is a bit more complicated! 
+  # This one is a bit more complicated!
   return mgmt_client.service.addCredential(requestId=make_request_id(), userId = user_id,
-                        credentialDetail = { 
+                        credentialDetail = {
                             'credentialId' : credential_id.replace(' ', ''),
                             'credentialType' : credential_type,
                             'friendlyName' : friendly_name
                             })
+
 
