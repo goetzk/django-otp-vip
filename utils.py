@@ -14,9 +14,7 @@ import datetime
 # For sleep()
 import time
 
-from .api import *
-# TODO: move to this
-# import .api
+from django_otp_vip import api
 
 from django.contrib.auth.models import User
 
@@ -32,11 +30,11 @@ from .credential_models import VipPushCredential
 
 def create_remote_vip_user(email):
   """Create record for user in VIP."""
-  return create_user(email)
+  return api.create_user(email)
 
 def disable_remote_vip_user(email):
   """Disable record for user in VIP."""
-  return update_user(email, new_user_status='DISABLED')
+  return api.update_user(email, new_user_status='DISABLED')
 
 # TODO: combine these two methods
 def query_user_info(user):
@@ -48,7 +46,7 @@ def query_user_info(user):
 
 def query_user_credential_details(user):
   """Extensive information about the credentials."""
-  user_details = get_user_info(user, includePushAttributes=True, includeTokenInfo=True)
+  user_details = api.get_user_info(user, includePushAttributes=True, includeTokenInfo=True)
   if user_details.status == '0000':
     # a list
     return user_details['credentialBindingDetail']
