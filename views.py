@@ -17,6 +17,8 @@ from django_otp_vip.credential_models import send_user_auth_push, poll_user_auth
 
 from django_otp_vip.forms import PushForm, TokenForm
 
+from django_otp_vip.utils import update_vip_user_records
+
 from django_otp.forms import OTPTokenForm
 
 import logging
@@ -25,38 +27,32 @@ logger = logging.getLogger(__name__)
 @login_required
 def run_otp(request, display_template='django_otp_vip/validate_vip.html'):
   """Perform second factor.
-  
+
   This function is to perform 'other' user validation, for example 2nd factor
   checks. Override this view per the documentation if using this functionality.
   """
   logger.debug('In run_otp view')
 
-  # TODO: finish killing off this code
-  def perform_second_factor_push(user):
-    """Send request for a second factor push to Symantec and poll for a result."""
-    logger.debug('In run_otp\'s perform_second_factor_push function')
-
-    # FIXME: catch errors and return PermissionDenied + helpful error
-    logger.debug('Calling send_user_auth_push and recording its transaction ID')
-    auth_attempt = send_user_auth_push(user)
-    # VIP_POLL_SLEEP_SECONDS times VIP_POLL_SLEEP_MAX_COUNT
-    logger.debug('Running poll_user_auth_push with transaction ID %s' % auth_attempt.transaction_id)
-    # This returns True or False depending on the result
-    return poll_user_auth_push(auth_attempt.transaction_id)
-
   # Update known details about user including credentials
   try:
-    updated_records = update_vip_user_records(request.user)
+    logger.debug('Attempting to update user details')
+    full_user_details = query_user_info(request.user.email)
+    if not full_user_details:
+      print('user does not exist, logging of error will occur later')
+      return False
+    updated_records = update_vip_user_records(full_user_details)
   except Exception as ee:
     # handle this better....
+    updated_records = None
     print 'balalhasdlhfaldfh'
     print ee
 
   if updated_records:
-    pass
+    print "The records were updated"
     # check the return code is success
     # that we have a user
     # that they have >= 1 credential to validate with
+    pass
 
   # if this is a POST request we need to process the form data
   if request.method == 'POST':

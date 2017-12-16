@@ -11,6 +11,9 @@ logger = logging.getLogger(__name__)
 # For now()
 import datetime
 
+# To add timezone data to dates
+import pytz
+
 # For sleep()
 import time
 
@@ -18,8 +21,8 @@ from django_otp_vip import api
 
 from django.contrib.auth.models import User
 
-from .models import VipUser, VipBaseCredential
-from .credential_models import VipPushCredential
+from .models import VipUser
+from .credential_models import VipPushCredential, VipTokenCredential
 
 # TODO: Raise ValidationError for our errors instead of just logging them
 
@@ -30,54 +33,64 @@ from .credential_models import VipPushCredential
 
 def create_remote_vip_user(email):
   """Create record for user in VIP."""
-  return api.create_user(email)
+  result = api.create_user(email)
+  return result
 
 def disable_remote_vip_user(email):
   """Disable record for user in VIP."""
-  return api.update_user(email, new_user_status='DISABLED')
+  result = api.update_user(user_id = email, new_user_status='DISABLED')
+  return result
 
-# TODO: combine these two methods
 def query_user_info(user):
   """Query APi for user details.
-  
-  Does not include full information wrt credentials.
+
+  This function expects a string it can use with the VIP API.
+
+  Includes extensive information about associated credentials, supplied as a list.
   """
-  return get_user_info(user)
+  if type(user) not in [ str, unicode ]:
+    logger.debug('query_user_info requires a string be passed in')
+    return False
 
-def query_user_credential_details(user):
-  """Extensive information about the credentials."""
+  logger.debug('query_user_info requesting information for {0}'.format(user))
   user_details = api.get_user_info(user, includePushAttributes=True, includeTokenInfo=True)
+  # logger.debug('query_user_info has gathered the following data for this user. {0}'.format(user_details))
   if user_details.status == '0000':
-    # a list
-    return user_details['credentialBindingDetail']
-  if user_details.status == 6003:
-    # user does not exist
-    return []
+    logger.debug('Query was successful')
+    # a dictionary
+    return user_details
+  if user_details.status == '6003':
+    logger.debug('Query was not successful')
+    # user does not exist, empty dict
+    return {}
 
-def add_credential_to_vip():
+def add_credential_to_vip(email, credential, name):
   """Add new credential to users VIP account.
 
   TODO: add call to add_credential_to_user()
   """
-  pass
+  result = api.add_credential_to_user(user_id = email, credential_id = credential, friendly_name=name)
+  return result
 
 def update_user_credentials(supplied_data):
   """Update credential records in DB.
-  
-  Take a list of credentials (as returned by query_user_credential_details) or
-  the full user details and update each of them in the db.
+
+  Takes full user details from query_user_info and updates User + credential records in DB.
   Returns true or false to indicate success or failure.
   """
   logger.debug('in update_user_credentials')
-  logger.debug(supplied_data)
-  if 'userId' in supplied_data:
+  if supplied_data:
     logger.debug('Full user details supplied, splitting out required information')
-    user_credentials = supplied_data['credentialBindingDetail']
-    user = discover_user_from_email(supplied_data['userId'])
+    try:
+      user_credentials = supplied_data['credentialBindingDetail']
+      user = discover_user_from_email(supplied_data['userId'])
+    except TypeError as te:
+      logger.debug('Was passed invalid data ({0})'.format(supplied_data))
+      return False
   else:
-    # FIXME: Assumes everything is ok
-    logger.debug('No userId found, assuming we were passed user credentials')
-    user_credentials = supplied_data
+    logger.debug('Nothing supplied:')
+    logger.debug(supplied_data)
+    return False
 
   if not user_credentials:
     logger.debug('No credentials to update')
@@ -94,12 +107,23 @@ def update_user_credentials(supplied_data):
       if attrib['Key'] == 'PUSH_PLATFORM':
         # TODO: is this available on non push compatible credentials? there but empty? if yes move this code
         push_platform = attrib['Value']
+        logger.debug('Push platform is %s' % push_platform)
+
       if (attrib['Key'] == 'PUSH_ENABLED') and (attrib['Value'] == 'true'):
+        logger.debug('Push enabled value is %s' % attrib['Value'])
         push_enabled_credential = True
+      elif (attrib['Key'] == 'PUSH_ENABLED') and (attrib['Value'] == 'false'):
+        logger.debug('Push enabled value is %s' % attrib['Value'])
+        push_enabled_credential = False
 
     logger.debug('Working with credential %s' % current_credential['credentialId'])
+
     try:
-      record = VipBaseCredential.objects.get(credential_id=current_credential['credentialId'] )
+      if push_enabled_credential:
+        record = VipPushCredential.objects.get(credential_id=current_credential['credentialId'] )
+      else:
+        record = VipTokenCredential.objects.get(credential_id=current_credential['credentialId'] )
+      # If/else has no finally and for some reason this debug message isn't being done
       logger.debug('Active record is %s, based on credential %s' % (record, current_credential['credentialId']))
     except VipBaseCredential.DoesNotExist:
       logger.debug('No record found for credential %s' % current_credential['credentialId'])
@@ -109,10 +133,10 @@ def update_user_credentials(supplied_data):
         record = VipPushCredential()
         record.push_enabled = True
         record.attribute_platform = push_platform
-      else:
-        # FIXME: this may need added complexity later, like more elif checks for different credentials
-        logger.debug('Creating with VipBaseCredential type')
-        record = VipBaseCredential()
+      else: # FIXME: this may need added complexity later, like more elif checks for different credentials
+        logger.debug('Creating with VipTokenCredential type')
+        record = VipTokenCredential()
+        record.push_enabled = False
 
     logger.debug('About to update credential %s' % current_credential['credentialId'])
     record.user = user
@@ -134,11 +158,12 @@ def update_user_credentials(supplied_data):
     record.last_authn_id = current_credential['bindingDetail']['lastAuthnId']
 
     record.save()
+    logger.debug('Record saved')
     return True
 
 def update_user_record(info_from_api):
   """Update VIP user data stored in DB.
-  
+
   Accepts a dict, as returned by query_user_info
   Returns True or False to indicate success or failure.
   """
@@ -154,17 +179,27 @@ def update_user_record(info_from_api):
 
   try:
     user_details = current_user.vipuser
-  except AttributeError as ae:
-    logger.debug('Unable to map %s to a user: can\'t update record' % info_from_api['userId'])
-    return False
+  # FIXME: VipUser is not imported, and i suspect that is due to (you guessed it) loops.
   except VipUser.DoesNotExist as rodne:
+    # We have a user, but they don't have a VipUser record.
     logger.debug('No existing VipUser object for %s, creating one now' % info_from_api['userId'])
     user_details = VipUser()
+  except AttributeError as ae:
+    # A NoneType object was returned by discover_user_from_email - no user mapped
+    logger.debug('Unable to map %s to a user: can\'t update record' % info_from_api['userId'])
+    return False
 
-  print("Updating VipUser instance for %s" % info_from_api['userId'])
+  time_for_db = info_from_api['userCreationTime']
+  # Make time object timezone aware if it isn't already
+  if time_for_db.tzinfo is None or time_for_db.tzinfo.utcoffset(time_for_db) is None:
+    logger.debug('Date supplied for vip_created_at is not timezone aware. Attempting to add UTC timezone')
+    time_for_db = time_for_db.replace(tzinfo=pytz.utc)
+
+  logger.debug("Updating VipUser instance for %s" % info_from_api['userId'])
   user_details.user = current_user
   user_details.vip_user_id = info_from_api['userId']
-  user_details.vip_created_at = info_from_api['userCreationTime']
+  # I'm 90% sure all times (except server time) are UTC
+  user_details.vip_created_at = time_for_db
   user_details.status = info_from_api['userStatus']
   user_details.bindings_count = info_from_api['numBindings']
   user_details.pin_set = info_from_api['isPinSet']
@@ -175,7 +210,7 @@ def update_user_record(info_from_api):
 
 def discover_user_from_email(email):
   """Establish the local user from email address.
-  
+
   TODO: Consider removing from this app.
   TODO: share this in oh so many parts of our codebase
   Pass in an email address and a user object will be returned.
@@ -187,29 +222,26 @@ def discover_user_from_email(email):
 
   user_list = User.objects.filter(email=email)
   if not user_list:
-    print 'No local user with email %s, unable to continue' % email
+    logger.debug('No local user with email %s, unable to continue' % email)
     return None
   if len(user_list) > 1:
     logger.debug('Warning, %s has multiple accounts in local system (%s), returning first' % (email, user_list))
 
   return user_list[0]
 
-def update_vip_user_records(user):
-  """Update both user and credential DB records."""
-  full_user_details = get_user_info(user.email, includePushAttributes=True, includeTokenInfo=True)
-  if not full_user_details.status == '0000':
-    print('user does not exist, logging of error will occur later')
-    return False
+def update_vip_user_records(info_from_api):
+  """Update both user and credential DB records.
 
-  try:
-    # Update the users "personal information"
-    update_user_record(full_user_details)
+  This accepts output from query_user_info()
+  """
+  # Update the users "personal information"
+  user_result = update_user_record(info_from_api)
 
-    # Update all credential records in DB
-    update_user_credentials(full_user_details)
+  # Update all credential records in DB
+  credential_result = update_user_credentials(info_from_api)
+
+  if user_result and credential_result:
     return True
-  except Exception as ee:
-    print 'adfadfa'
-    print ee
-    return False
+
+  return False
 
