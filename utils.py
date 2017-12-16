@@ -32,11 +32,11 @@ from .credential_models import VipPushCredential
 
 def create_remote_vip_user(email):
   """Create record for user in VIP."""
-  create_user(email)
+  return create_user(email)
 
 def disable_remote_vip_user(email):
   """Disable record for user in VIP."""
-  update_user(email, new_user_status='DISABLED')
+  return update_user(email, new_user_status='DISABLED')
 
 # TODO: combine these two methods
 def query_user_info(user):
@@ -44,7 +44,7 @@ def query_user_info(user):
   
   Does not include full information wrt credentials.
   """
-  user_details = get_user_info(user)
+  return get_user_info(user)
 
 def query_user_credential_details(user):
   """Extensive information about the credentials."""
@@ -201,7 +201,7 @@ def update_vip_user_records(user):
   full_user_details = get_user_info(user.email, includePushAttributes=True, includeTokenInfo=True)
   if not full_user_details.status == '0000':
     print('user does not exist, logging of error will occur later')
-    pass
+    return False
 
   try:
     # Update the users "personal information"
@@ -209,7 +209,9 @@ def update_vip_user_records(user):
 
     # Update all credential records in DB
     update_user_credentials(full_user_details)
+    return True
   except Exception as ee:
     print 'adfadfa'
     print ee
+    return False
 
