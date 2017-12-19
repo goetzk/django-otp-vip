@@ -15,8 +15,8 @@ import time
 from .models import VipBaseCredential
 from otp_vip import utils
 
-VIP_POLL_SLEEP_SECONDS = 10
-VIP_POLL_SLEEP_MAX_COUNT = 10
+def update_user_credentials(supplied_data):
+  """Update credential records in DB.
 
 def save_modified_record(record, user_obj, credential_json):
   """Update and save credential DB entries.
@@ -215,7 +215,7 @@ class VipPushCredential(VipBaseCredential):
     This method runs self.save() to record the transaction id.
     """
     logger.debug('Calling send_user_auth_push and recording its transaction ID')
-    auth_attempt = utils.send_user_auth_push(self.user.email)
+    auth_attempt = utils.send_user_auth_push(self.user)
     if auth_attempt is not None:
       logger.debug('Transaction ID: %s' % auth_attempt)
       self.latest_transaction_id = auth_attempt

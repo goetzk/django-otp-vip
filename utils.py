@@ -22,7 +22,9 @@ from django_otp_vip import api
 from django.contrib.auth.models import User
 
 from .models import VipUser
-from .credential_models import VipPushCredential, VipTokenCredential
+
+VIP_POLL_SLEEP_SECONDS = 10
+VIP_POLL_SLEEP_MAX_COUNT = 10
 
 # TODO: Raise ValidationError for our errors instead of just logging them
 
@@ -72,94 +74,6 @@ def add_credential_to_vip(email, credential, name):
   result = api.add_credential_to_user(user_id = email, credential_id = credential, friendly_name=name)
   return result
 
-def update_user_credentials(supplied_data):
-  """Update credential records in DB.
-
-  Takes full user details from query_user_info and updates User + credential records in DB.
-  Returns true or false to indicate success or failure.
-  """
-  logger.debug('in update_user_credentials')
-  if supplied_data:
-    logger.debug('Full user details supplied, splitting out required information')
-    try:
-      user_credentials = supplied_data['credentialBindingDetail']
-      user = discover_user_from_email(supplied_data['userId'])
-    except TypeError as te:
-      logger.debug('Was passed invalid data ({0})'.format(supplied_data))
-      return False
-  else:
-    logger.debug('Nothing supplied:')
-    logger.debug(supplied_data)
-    return False
-
-  if not user_credentials:
-    logger.debug('No credentials to update')
-    return True
-
-  if not user:
-    logger.debug('Unable to create or update credential without user object')
-    return False
-
-  logger.debug('looping %s credentials' % len(user_credentials))
-  for current_credential in user_credentials:
-
-    for attrib in current_credential['pushAttributes']:
-      if attrib['Key'] == 'PUSH_PLATFORM':
-        # TODO: is this available on non push compatible credentials? there but empty? if yes move this code
-        push_platform = attrib['Value']
-        logger.debug('Push platform is %s' % push_platform)
-
-      if (attrib['Key'] == 'PUSH_ENABLED') and (attrib['Value'] == 'true'):
-        logger.debug('Push enabled value is %s' % attrib['Value'])
-        push_enabled_credential = True
-      elif (attrib['Key'] == 'PUSH_ENABLED') and (attrib['Value'] == 'false'):
-        logger.debug('Push enabled value is %s' % attrib['Value'])
-        push_enabled_credential = False
-
-    logger.debug('Working with credential %s' % current_credential['credentialId'])
-
-    try:
-      if push_enabled_credential:
-        record = VipPushCredential.objects.get(credential_id=current_credential['credentialId'] )
-      else:
-        record = VipTokenCredential.objects.get(credential_id=current_credential['credentialId'] )
-      # If/else has no finally and for some reason this debug message isn't being done
-      logger.debug('Active record is %s, based on credential %s' % (record, current_credential['credentialId']))
-    except VipBaseCredential.DoesNotExist:
-      logger.debug('No record found for credential %s' % current_credential['credentialId'])
-
-      if push_enabled_credential:
-        logger.debug('Creating with VipPushCredential type')
-        record = VipPushCredential()
-        record.push_enabled = True
-        record.attribute_platform = push_platform
-      else: # FIXME: this may need added complexity later, like more elif checks for different credentials
-        logger.debug('Creating with VipTokenCredential type')
-        record = VipTokenCredential()
-        record.push_enabled = False
-
-    logger.debug('About to update credential %s' % current_credential['credentialId'])
-    record.user = user
-    record.credential_id = current_credential['credentialId']
-    record.credential_type = current_credential['credentialType']
-    record.credential_status = current_credential['credentialStatus']
-    record.token_form_factor = current_credential['tokenCategoryDetails']['FormFactor']
-    record.token_kind = current_credential['tokenInfo']['TokenKind']
-    record.token_adaptor = current_credential['tokenInfo']['Adapter']
-    record.token_status = current_credential['tokenInfo']['TokenStatus']
-    record.token_expiration_date = current_credential['tokenInfo']['ExpirationDate']
-    record.token_last_update = current_credential['tokenInfo']['LastUpdate']
-    # FIXME: silently failed to record on first run. bug?
-    record.friendly_name = current_credential['bindingDetail']['friendlyName']
-    record.bind_status = current_credential['bindingDetail']['bindStatus']
-    record.bind_time = current_credential['bindingDetail']['lastBindTime']
-    record.last_authn_time = current_credential['bindingDetail']['lastAuthnTime']
-    # Same as transaction_id?
-    record.last_authn_id = current_credential['bindingDetail']['lastAuthnId']
-
-    record.save()
-    logger.debug('Record saved')
-    return True
 
 def update_user_record(info_from_api):
   """Update VIP user data stored in DB.
@@ -229,19 +143,103 @@ def discover_user_from_email(email):
 
   return user_list[0]
 
-def update_vip_user_records(info_from_api):
-  """Update both user and credential DB records.
+def send_user_auth_push(user, token={}):
+  """Facilitate authenticating with a push notification.
 
-  This accepts output from query_user_info()
+  Takes a user object and triggers an authentication request to a credential
+  via Symantec VIP
   """
-  # Update the users "personal information"
-  user_result = update_user_record(info_from_api)
+  email = user.email
+  logger.debug('Initialising send_user_auth_push with user {0}, email {1}'.format(user, email))
 
-  # Update all credential records in DB
-  credential_result = update_user_credentials(info_from_api)
+  logger.debug('Attempting to send push request for user {0} with data {1}'.format( email, token))
+  auth_authenticate_user_with_push = api.authenticate_user_with_push(email, token)
+  logger.debug('Checking request return code')
+  if auth_authenticate_user_with_push.status == '6040':
+    push_transaction_id = auth_authenticate_user_with_push.transactionId
+    push_sent = datetime.datetime.now()
+    logger.debug('Authentication push %s sent at %s' % (push_transaction_id, push_sent))
+  else:
+    # Something other than a successful send
+    push_transaction_id = None
+    logger.debug( "Problem when trying to send push. Error ID %s: %s" % (auth_authenticate_user_with_push.status, auth_authenticate_user_with_push.statusMessage))
+  return push_transaction_id
 
-  if user_result and credential_result:
+
+def poll_user_auth_push(transaction):
+  """Poll Symantec VIP service to see if push notification has been actioned.
+
+  Using a transactionId returned by send_user_auth_push, wait to determine if
+  the user authenticates successfully.
+  This returns True on success and False on authentication or error conditions
+  Takes a string containing the transaction ID generated in send_user_auth_push
+  """
+  logger.debug('Initialising poll_user_auth_push')
+
+  # Sleep before running the query, user needs time to respond (Assumes this is
+  # run immediately after send_user_auth_push)
+  logger.debug('Sleeping for %s seconds' % VIP_POLL_SLEEP_SECONDS)
+  time.sleep(VIP_POLL_SLEEP_SECONDS)
+
+  still_waiting = True
+  num_sleeps = 0
+
+  logger.debug('About to start wait loop')
+  while still_waiting:
+    try:
+      logger.debug('Polling to check status of request')
+      query_poll_push_status = poll_push_status([transaction])
+    except zeep.exceptions.ValidationError as zevee:
+      logger.debug("Data Validation error: %s" % zevee)
+      return False
+
+    if not len(query_poll_push_status.transactionStatus):
+      logger.debug('Somehow we\'ve arrived here with no transactions to poll. Returning false')
+      still_waiting = False
+      return False
+
+    # Should only be one item in this list
+    logger.debug('Checking %s transactionStatus items' % len(query_poll_push_status.transactionStatus))
+    for push in query_poll_push_status.transactionStatus:
+      logger.debug( 'Transaction %s is status %s: %s' % (push.transactionId, push.status, push.statusMessage))
+      if push.status == '7000':
+        logger.debug("Transaction %s approved at %s" % (push.transactionId, datetime.datetime.now()))
+        still_waiting = False
+        return True
+      if push.status == '7001':
+        # If we've been waiting for 10 iterations of our sleep its time to give up.
+        if num_sleeps == VIP_POLL_SLEEP_MAX_COUNT:
+          logger.debug("Transaction %s is taking too long, giving up up after %s sleeps of %s seconds" % (push.transactionId, num_sleeps, VIP_POLL_SLEEP_SECONDS))
+          still_waiting = False
+          return False
+        logger.debug('Still waiting for %s' % push.transactionId)
+        time.sleep(VIP_POLL_SLEEP_SECONDS)
+        num_sleeps += 1
+      else:
+        # Auth failed
+        logger.debug( "Authentication of transaction %s has failed. Message returned was %s (code %s)" % (push.transactionId, push.statusMessage, push.status))
+        still_waiting = False
+        return False
+
+
+def validate_token_data(user, token):
+  """Facilitate authenticating with a token supplied code.
+
+  Takes a user object and string for the code
+  """
+  logger.debug('Initialising ValidateTokenData with user {0} and code {1}'.format(user, token))
+  if user.email:
+    email = user.email
+  else:
+    logger.info('{0} has no email address'.format(user))
+    return False
+
+  auth_authenticate_user = api.authenticate_user( email, token)
+  logger.debug('Checking request return code')
+  if auth_authenticate_user.status == '0000':
+    logger.debug('Authentication succeeded at %s' % datetime.datetime.now())
     return True
-
-  return False
-
+  else:
+    # Something other than a successful send
+    logger.debug( "Problem with authentication. Error ID {0}: {1}(Detail code {2}, {3})".format(auth_authenticate_user.status, auth_authenticate_user.statusMessage, auth_authenticate_user.detail, auth_authenticate_user.detailMessage))
+    return False

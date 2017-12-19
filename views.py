@@ -13,16 +13,33 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.core.exceptions import ImproperlyConfigured, PermissionDenied
 
-from django_otp_vip.credential_models import send_user_auth_push, poll_user_auth_push
-
 from django_otp_vip.forms import PushForm, TokenForm
 
-from django_otp_vip.utils import update_vip_user_records
+from django_otp_vip import utils
+from django_otp_vip import credential_models
 
 from django_otp.forms import OTPTokenForm
 
 import logging
 logger = logging.getLogger(__name__)
+
+# TODO: merge this code in
+def update_vip_user_records(info_from_api):
+  """Update both user and credential DB records.
+
+  This accepts output from query_user_info()
+  """
+  # Update the users "personal information"
+  user_result = utils.update_user_record(info_from_api)
+
+  # Update all credential records in DB
+  credential_result = credential_models.update_user_credentials(info_from_api)
+
+  if user_result and credential_result:
+    return True
+
+  return False
+
 
 @login_required
 def run_otp(request, display_template='django_otp_vip/validate_vip.html'):
@@ -32,6 +49,7 @@ def run_otp(request, display_template='django_otp_vip/validate_vip.html'):
   checks. Override this view per the documentation if using this functionality.
   """
   logger.debug('In run_otp view')
+
 
   # Update known details about user including credentials
   try:
