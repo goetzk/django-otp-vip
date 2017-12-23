@@ -215,7 +215,7 @@ class VipPushCredential(VipBaseCredential):
     This method runs self.save() to record the transaction id.
     """
     logger.debug('Calling send_user_auth_push and recording its transaction ID')
-    auth_attempt = utils.send_user_auth_push(self.user)
+    auth_attempt = utils.send_user_auth_push(self.user.email)
     if auth_attempt is not None:
       logger.debug('Transaction ID: %s' % auth_attempt)
       self.latest_transaction_id = auth_attempt

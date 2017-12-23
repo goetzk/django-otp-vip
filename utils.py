@@ -143,15 +143,12 @@ def discover_user_from_email(email):
 
   return user_list[0]
 
-def send_user_auth_push(user, token={}):
+def send_user_auth_push(email, token={}):
   """Facilitate authenticating with a push notification.
 
   Takes a user object and triggers an authentication request to a credential
   via Symantec VIP
   """
-  email = user.email
-  logger.debug('Initialising send_user_auth_push with user {0}, email {1}'.format(user, email))
-
   logger.debug('Attempting to send push request for user {0} with data {1}'.format( email, token))
   auth_authenticate_user_with_push = api.authenticate_user_with_push(email, token)
   logger.debug('Checking request return code')
@@ -222,16 +219,14 @@ def poll_user_auth_push(transaction):
         return False
 
 
-def validate_token_data(user, token):
+def validate_token_data(email, token):
   """Facilitate authenticating with a token supplied code.
 
-  Takes a user object and string for the code
+  Takes an email and string for the code
   """
-  logger.debug('Initialising ValidateTokenData with user {0} and code {1}'.format(user, token))
-  if user.email:
-    email = user.email
-  else:
-    logger.info('{0} has no email address'.format(user))
+  logger.debug('Initialising ValidateTokenData with user {0} and code {1}'.format(email, token))
+  if not email:
+    logger.info('No email address supplied (given ({0})'.format(email))
     return False
 
   auth_authenticate_user = api.authenticate_user( email, token)
@@ -243,3 +238,4 @@ def validate_token_data(user, token):
     # Something other than a successful send
     logger.debug( "Problem with authentication. Error ID {0}: {1}(Detail code {2}, {3})".format(auth_authenticate_user.status, auth_authenticate_user.statusMessage, auth_authenticate_user.detail, auth_authenticate_user.detailMessage))
     return False
+
