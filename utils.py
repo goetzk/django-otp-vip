@@ -17,6 +17,9 @@ import pytz
 # For sleep()
 import time
 
+# For error handling
+import zeep
+
 from django_otp_vip import api
 
 from django.contrib.auth.models import User
@@ -41,6 +44,11 @@ def create_remote_vip_user(email):
 def disable_remote_vip_user(email):
   """Disable record for user in VIP."""
   result = api.update_user(user_id = email, new_user_status='DISABLED')
+  return result
+
+def rename_remote_vip_user(email, newemail):
+  """Disable record for user in VIP."""
+  result = api.update_user(user_id = email, new_user_id = newemail)
   return result
 
 def query_user_info(user):
@@ -149,6 +157,10 @@ def send_user_auth_push(email, token={}):
   Takes a user object and triggers an authentication request to a credential
   via Symantec VIP
   """
+  if not email:
+    logger.debug('No user supplied')
+    return None
+
   logger.debug('Attempting to send push request for user {0} with data {1}'.format( email, token))
   auth_authenticate_user_with_push = api.authenticate_user_with_push(email, token)
   logger.debug('Checking request return code')
@@ -173,10 +185,9 @@ def poll_user_auth_push(transaction):
   """
   logger.debug('Initialising poll_user_auth_push')
 
-  # Sleep before running the query, user needs time to respond (Assumes this is
-  # run immediately after send_user_auth_push)
-  logger.debug('Sleeping for %s seconds' % VIP_POLL_SLEEP_SECONDS)
-  time.sleep(VIP_POLL_SLEEP_SECONDS)
+  if not transaction:
+    logger.debug('No transaction id provided')
+    return False
 
   still_waiting = True
   num_sleeps = 0
@@ -185,7 +196,7 @@ def poll_user_auth_push(transaction):
   while still_waiting:
     try:
       logger.debug('Polling to check status of request')
-      query_poll_push_status = poll_push_status([transaction])
+      query_poll_push_status = api.poll_push_status([transaction])
     except zeep.exceptions.ValidationError as zevee:
       logger.debug("Data Validation error: %s" % zevee)
       return False
@@ -203,7 +214,7 @@ def poll_user_auth_push(transaction):
         logger.debug("Transaction %s approved at %s" % (push.transactionId, datetime.datetime.now()))
         still_waiting = False
         return True
-      if push.status == '7001':
+      elif push.status == '7001':
         # If we've been waiting for 10 iterations of our sleep its time to give up.
         if num_sleeps == VIP_POLL_SLEEP_MAX_COUNT:
           logger.debug("Transaction %s is taking too long, giving up up after %s sleeps of %s seconds" % (push.transactionId, num_sleeps, VIP_POLL_SLEEP_SECONDS))

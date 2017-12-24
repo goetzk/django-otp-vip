@@ -62,6 +62,7 @@ class PluginVipCustomisation(zeep.Plugin):
     # query_client = c.query_client ; query_client.service.getUserInfo(userId = 'karl@kgoetz.id.au', requestId=xsd.SkipValue)
 
     """
+# TODO: are we able to hook in to zeeps call validation here so we don't need it per query?
 #     print('in egress')
 #     envelope = etree.tostring(envelope).replace('<ns0:requestId/>', '<ns0:requestId>{0}</ns0:requestId>'.format(rand()))
     return envelope, http_headers

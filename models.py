@@ -52,7 +52,8 @@ class VipBaseCredential(OTP_Device):
 # FIXME: These all come from a software token and many may not actually be universal
   credential_id = models.CharField(max_length=20, default=False, unique=True)
   credential_type = models.CharField(max_length=20, default=False)
-  credential_status = models.CharField(max_length=20, default=None)
+  credential_status = models.CharField(max_length=20, null=True)
+  friendly_name = models.CharField(max_length=20, default=False)
   token_form_factor = models.CharField(max_length=20, default=False)
   token_kind = models.CharField(max_length=20, default=False)
   token_adaptor = models.CharField(max_length=20, default=False)
@@ -62,7 +63,7 @@ class VipBaseCredential(OTP_Device):
   bind_status = models.CharField(max_length=20, default=False)
   bind_time = models.DateTimeField()
   friendly_name = models.CharField(max_length=20, default=False)
-  last_authn_time = models.DateTimeField()
+  last_authn_time = models.DateTimeField(null=True, blank=True)
   # Same as transaction_id?
   last_authn_id = models.CharField(max_length=20, default=False, null=True)
   push_enabled = models.BooleanField(default=False)
