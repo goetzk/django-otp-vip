@@ -100,7 +100,7 @@ def update_user_credentials(supplied_data):
   Returns true or false to indicate success or failure.
 
   Note that this requires includePushAttributes=True, includeTokenInfo=True be
-  passed to get_user_info (the default for query_user_info)
+  passed to get_user_info
   """
   logger.debug('in update_user_credentials')
   if supplied_data:
@@ -191,6 +191,7 @@ def update_user_credentials(supplied_data):
   logger.debug('Pruned tokens no longer listed in API from database')
 
   # If we made it all the way to the end of this function without errors,
+  # return True
   return True
 
 class VipPushCredential(VipBaseCredential):
