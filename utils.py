@@ -199,12 +199,8 @@ def poll_user_auth_push(transaction):
       query_poll_push_status = api.poll_push_status([transaction])
     except zeep.exceptions.ValidationError as zevee:
       logger.debug("Data Validation error: %s" % zevee)
-      return False
-
-    if not len(query_poll_push_status.transactionStatus):
-      logger.debug('Somehow we\'ve arrived here with no transactions to poll. Returning false')
       still_waiting = False
-      return False
+      result = False
 
     # Should only be one item in this list
     logger.debug('Checking %s transactionStatus items' % len(query_poll_push_status.transactionStatus))
@@ -213,13 +209,13 @@ def poll_user_auth_push(transaction):
       if push.status == '7000':
         logger.debug("Transaction %s approved at %s" % (push.transactionId, datetime.datetime.now()))
         still_waiting = False
-        return True
+        result = True
       elif push.status == '7001':
         # If we've been waiting for 10 iterations of our sleep its time to give up.
         if num_sleeps == VIP_POLL_SLEEP_MAX_COUNT:
           logger.debug("Transaction %s is taking too long, giving up up after %s sleeps of %s seconds" % (push.transactionId, num_sleeps, VIP_POLL_SLEEP_SECONDS))
           still_waiting = False
-          return False
+          result = False
         logger.debug('Still waiting for %s' % push.transactionId)
         time.sleep(VIP_POLL_SLEEP_SECONDS)
         num_sleeps += 1
@@ -227,8 +223,10 @@ def poll_user_auth_push(transaction):
         # Auth failed
         logger.debug( "Authentication of transaction %s has failed. Message returned was %s (code %s)" % (push.transactionId, push.statusMessage, push.status))
         still_waiting = False
-        return False
+        result = False
 
+  # At the end of the loop return the result
+  return result
 
 def validate_token_data(email, token):
   """Facilitate authenticating with a token supplied code.
