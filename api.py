@@ -88,3 +88,11 @@ def add_credential_to_user(user_id, credential_id, credential_type = 'STANDARD_O
                             })
 
 
+def remove_credential_from_user(user_id, credential_id, credential_type = 'STANDARD_OTP'):
+  """Add a new credential to an existing user."""
+  return mgmt_client.service.removeCredential(requestId=make_request_id(), userId = user_id,
+                            credentialId=credential_id,
+                            credentialType=credential_type,
+                            )
+
+

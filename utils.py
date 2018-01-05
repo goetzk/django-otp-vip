@@ -75,11 +75,17 @@ def query_user_info(user):
     return {}
 
 def add_credential_to_vip(email, credential, name):
-  """Add new credential to users VIP account.
-
-  TODO: add call to add_credential_to_user()
-  """
+  """Add new credential to users VIP account."""
   result = api.add_credential_to_user(user_id = email, credential_id = credential, friendly_name=name)
+  return result
+
+def remove_credential_from_vip(email, credential):
+  """Remove a credential from users VIP account.
+
+  Users can only have a limited number of credentials registered, and sometimes
+  an upgrade can replace the credential id!
+  """
+  result = api.remove_credential_from_user(user_id = email, credential_id = credential)
   return result
 
 
