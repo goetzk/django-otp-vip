@@ -92,6 +92,83 @@ def process_push_credential(user_obj, credential_json):
 
   save_modified_record(record, user_obj, credential_json)
 
+def save_modified_record(record, user_obj, credential_json):
+  """Update and save credential DB entries.
+
+  Should be passed an object derived from VipBaseCredential.
+  """
+  logger.debug('About to update credential %s' % credential_json['credentialId'])
+  record.user = user_obj
+  record.credential_id = credential_json['credentialId']
+  record.credential_type = credential_json['credentialType']
+  record.credential_status = credential_json['credentialStatus']
+  record.token_form_factor = credential_json['tokenCategoryDetails']['FormFactor']
+  record.token_kind = credential_json['tokenInfo']['TokenKind']
+  record.token_adaptor = credential_json['tokenInfo']['Adapter']
+  record.token_status = credential_json['tokenInfo']['TokenStatus']
+  record.token_expiration_date = credential_json['tokenInfo']['ExpirationDate']
+  record.token_last_update = credential_json['tokenInfo']['LastUpdate']
+  record.name = '{0} (Push enabled {1})'.format(credential_json['bindingDetail']['friendlyName'], record.push_enabled)
+  record.friendly_name = credential_json['bindingDetail']['friendlyName']
+  record.bind_status = credential_json['bindingDetail']['bindStatus']
+  record.bind_time = credential_json['bindingDetail']['lastBindTime']
+  record.last_authn_time = credential_json['bindingDetail']['lastAuthnTime']
+  # Same as transaction_id?
+  record.last_authn_id = credential_json['bindingDetail']['lastAuthnId']
+
+  record.save()
+  logger.debug('Record saved')
+  return record
+
+
+def process_token_credential(user_obj, credential_json):
+  """Set up credential object ready to be saved.
+
+  This should be used to record any credential that outputs a token which can
+  be validated against the VIP API.
+  """
+  logger.debug('This is a token based credential')
+  # TODO: Add some sanity checks for 'is this actually a token we can add here'
+  try:
+    record = VipTokenCredential.objects.get(credential_id=credential_json['credentialId'] )
+    logger.debug('Active record is %s, based on credential %s' % (record, credential_json['credentialId']))
+  except Exception as ee:
+    logger.debug('No record found for credential %s, creating a new VipTokenCredential' % credential_json['credentialId'])
+    record = VipTokenCredential()
+    record.push_enabled = False
+
+  save_modified_record(record, user_obj, credential_json)
+
+
+
+def process_push_credential(user_obj, credential_json):
+  """Set up push credential object ready to be saved.
+
+  This should be used to record any credential that uses out of band 'push'
+  authentication to validate the user.
+  Note that credentials of this kind can also have a token generating part so
+  may appear in both credential types.
+  """
+  logger.debug('this is a push enabled credential')
+  try:
+    record = VipPushCredential.objects.get(credential_id=credential_json['credentialId'] )
+    logger.debug('Active record is %s, based on credential %s' % (record, credential_json['credentialId']))
+  except Exception as ee:
+    logger.debug('No record found for credential %s, creating a new VipPushCredential' % credential_json['credentialId'])
+    record = VipPushCredential()
+
+  # Check attributes for useful information - platform and if push is enabled (rather than simply supported)
+  for attrib in credential_json['pushAttributes']:
+    if attrib['Key'] == 'PUSH_PLATFORM':
+      record.attribute_platform = attrib['Value']
+      logger.debug('Push platform is %s' % record.attribute_platform)
+
+    if (attrib['Key'] == 'PUSH_ENABLED') :
+      record.push_enabled = attrib['Value']
+      logger.debug('Push enabled value is %s' % record.push_enabled)
+
+  save_modified_record(record, user_obj, credential_json)
+
 
 def update_user_credentials(supplied_data):
   """Update credential records in DB.
@@ -127,31 +204,12 @@ def update_user_credentials(supplied_data):
   credentials_list = []
   logger.debug('looping %s credentials' % len(user_credentials))
   for current_credential in user_credentials:
-    # FIXME: Make this a loop counter or credential ID
-    # logger.debug('Currently on {0}'.format('N'))
+    logger.debug('Working with credential %s' % current_credential['credentialId'])
+    credentials_list.append(current_credential['credentialId'])
 
     # Only push capable platforms have values in pushAttributes
     if current_credential['pushAttributes']:
-      push_enabled_credential = True
-      logger.debug("push_enabled_credential set to True")
-    else:
-      push_enabled_credential = False
-      logger.debug("push_enabled_credential set to False")
-
-# This has been replaced by the if statement above. I'm retaining it (for a
-# short while) in case I decide to detect what I presume is a configuration
-# setting of PUSH_ENABLED.
-#     for attrib in current_credential['pushAttributes']:
-#       if attrib['Key'] == 'PUSH_PLATFORM':
-#         push_platform = attrib['Value']
-#         logger.debug('Push platform is %s' % push_platform)
-#
-#       if (attrib['Key'] == 'PUSH_ENABLED') and (attrib['Value'] == 'true'):
-#         logger.debug('Push enabled value is %s' % attrib['Value'])
-#         push_enabled_credential = True
-#       elif (attrib['Key'] == 'PUSH_ENABLED') and (attrib['Value'] == 'false'):
-#         logger.debug('Push enabled value is %s' % attrib['Value'])
-#         push_enabled_credential = False
+      push_cred = process_push_credential(user, current_credential)
 
     logger.debug('Working with credential %s' % current_credential['credentialId'])
     credentials_list.append(current_credential['credentialId'])
