@@ -127,6 +127,32 @@ def update_user_credentials(supplied_data):
   credentials_list = []
   logger.debug('looping %s credentials' % len(user_credentials))
   for current_credential in user_credentials:
+    # FIXME: Make this a loop counter or credential ID
+    # logger.debug('Currently on {0}'.format('N'))
+
+    # Only push capable platforms have values in pushAttributes
+    if current_credential['pushAttributes']:
+      push_enabled_credential = True
+      logger.debug("push_enabled_credential set to True")
+    else:
+      push_enabled_credential = False
+      logger.debug("push_enabled_credential set to False")
+
+# This has been replaced by the if statement above. I'm retaining it (for a
+# short while) in case I decide to detect what I presume is a configuration
+# setting of PUSH_ENABLED.
+#     for attrib in current_credential['pushAttributes']:
+#       if attrib['Key'] == 'PUSH_PLATFORM':
+#         push_platform = attrib['Value']
+#         logger.debug('Push platform is %s' % push_platform)
+#
+#       if (attrib['Key'] == 'PUSH_ENABLED') and (attrib['Value'] == 'true'):
+#         logger.debug('Push enabled value is %s' % attrib['Value'])
+#         push_enabled_credential = True
+#       elif (attrib['Key'] == 'PUSH_ENABLED') and (attrib['Value'] == 'false'):
+#         logger.debug('Push enabled value is %s' % attrib['Value'])
+#         push_enabled_credential = False
+
     logger.debug('Working with credential %s' % current_credential['credentialId'])
     credentials_list.append(current_credential['credentialId'])
 
