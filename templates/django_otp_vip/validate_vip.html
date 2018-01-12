@@ -4,7 +4,7 @@
 
 {% if formpush %}
 <h3>Push auth</h3>
-<form action="{% url 'otp_validate' %}" method="post">
+<form action="{% url 'run_multi_factor' %}" method="post">
     {% csrf_token %}
     <div class="form-row"> {{ formpush.otp_device.errors }}{{ formpush.otp_device.label_tag }}{{ formpush.otp_device }} </div>
     <div class="submit-row">
@@ -17,7 +17,7 @@
 
 {% if formtoken %}
 <h3>Token auth</h3>
-<form action="{% url 'otp_validate' %}" method="post">
+<form action="{% url 'run_multi_factor' %}" method="post">
     {% csrf_token %}
     <div class="form-row"> {{ formtoken.otp_device.errors }}{{ formtoken.otp_device.label_tag }}{{ formtoken.otp_device }} </div>
     <div class="form-row"> {{ formtoken.otp_token.errors }}{{ formtoken.otp_token.label_tag }}{{ formtoken.otp_token }} </div>
