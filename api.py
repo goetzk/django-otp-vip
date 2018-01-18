@@ -68,7 +68,8 @@ def update_user(user_id, new_user_status=None, new_user_id=None):
 
   newUserId is required if user is changing email address
   newUserStatus is optional, value can be ACTIVE or DISABLED. This is how users are disabled/re-enabled!
-  NOTE: as written, can only do one of status/id update per run
+
+  This can only update one of status/id update per run.
   """
   # If the user has a new status, change them.
   if new_user_status:

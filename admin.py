@@ -12,6 +12,7 @@ from django.contrib import admin
 from .credential_models import VipPushCredential, VipTokenCredential
 from models import VipUser
 
+# http://django-otp-official.readthedocs.io/en/latest/auth.html?highlight=form#the-admin-site
 
 @admin.register(VipUser)
 class UserAdmin(admin.ModelAdmin):

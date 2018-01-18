@@ -128,7 +128,6 @@ def process_token_credential(user_obj, credential_json):
   be validated against the VIP API.
   """
   logger.debug('This is a token based credential')
-  # TODO: Add some sanity checks for 'is this actually a token we can add here'
   try:
     record = VipTokenCredential.objects.get(credential_id=credential_json['credentialId'] )
     logger.debug('Active record is %s, based on credential %s' % (record, credential_json['credentialId']))
@@ -177,7 +176,7 @@ def update_user_credentials(supplied_data):
   Returns true or false to indicate success or failure.
 
   Note that this requires includePushAttributes=True, includeTokenInfo=True be
-  passed to get_user_info
+  passed to get_user_info (the default for query_user_info)
   """
   logger.debug('in update_user_credentials')
   if supplied_data:

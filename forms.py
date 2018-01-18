@@ -149,6 +149,7 @@ class RemoveCredentials(forms.Form):
         token_credential_updated = credential_models.update_user_credentials(utils.query_user_info(self.ident))
 
 
+# TODO: Fix this, it isn't updating the DB. (nor is it reading from the db)
 class Change2faSetting(forms.Form):
   """Manage multifactor_wanted setting in VipUser."""
 

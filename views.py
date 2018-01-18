@@ -23,7 +23,6 @@ from django_otp.forms import OTPTokenForm
 import logging
 logger = logging.getLogger(__name__)
 
-# TODO: merge this code in
 def update_vip_user_records(info_from_api):
   """Update both user and credential DB records.
 
@@ -72,8 +71,6 @@ def multi_factor(request, display_template='django_otp_vip/validate_vip.html'):
   checks. Override this view per the documentation if using this functionality.
   """
   logger.debug('In multi_factor view')
-  # todo: display template which includes symantec stuff but isn't exclusively symantec
-  # display_template = 'itpa/my_itpa.html'
   display_template = 'django_otp_vip/validate_vip.html'
   logger.debug('using template {0}'.format(display_template))
 
@@ -100,7 +97,6 @@ def multi_factor(request, display_template='django_otp_vip/validate_vip.html'):
         logger.debug("Second factor pin failed; %s will not be permitted to log in" % request.user)
         # Otherwise they should not be logging in.
         logout(request)
-        # FIXME: return error text to user instead of generic 403
         raise PermissionDenied("Second authentication factor failed")
 
       # check if the push is valid
@@ -128,6 +124,5 @@ def multi_factor(request, display_template='django_otp_vip/validate_vip.html'):
     # ditto token credentials
     token_form  = TokenForm(request.user)
 
-  # TODO: check if there are devices that will work with the two types of forms and if not set None
   return render(request, display_template, {'formpush': push_form, 'formtoken': token_form })
 

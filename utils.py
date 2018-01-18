@@ -29,12 +29,6 @@ from .models import VipUser
 VIP_POLL_SLEEP_SECONDS = 10
 VIP_POLL_SLEEP_MAX_COUNT = 10
 
-# TODO: Raise ValidationError for our errors instead of just logging them
-
-
-# NOTE: several functions that should be here were moved to models because screw you circular imports :(
-
-
 
 def create_remote_vip_user(email):
   """Create record for user in VIP."""
@@ -139,8 +133,6 @@ def update_user_record(info_from_api):
 def discover_user_from_email(email):
   """Establish the local user from email address.
 
-  TODO: Consider removing from this app.
-  TODO: share this in oh so many parts of our codebase
   Pass in an email address and a user object will be returned.
   None if no user found
   """
