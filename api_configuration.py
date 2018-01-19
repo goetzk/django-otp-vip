@@ -58,7 +58,7 @@ class PluginVipCustomisation(zeep.Plugin):
     # This would be possible but zeep does validation which occurs before plugins are run - see
     # http://docs.python-zeep.org/en/master/datastructures.html#skipvalue
     # At the moment it requires an xsd skip added to every query - no improvement on adding the random value there.
-    # from django_otp_vip.api import VIPClient, IngressOutput; i = IngressOutput(); c = VIPClient(plugins=[i]) ;
+    # from otp_vip.api import VIPClient, IngressOutput; i = IngressOutput(); c = VIPClient(plugins=[i]) ;
     # query_client = c.query_client ; query_client.service.getUserInfo(userId = 'karl@kgoetz.id.au', requestId=xsd.SkipValue)
 
     """

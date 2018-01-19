@@ -9,4 +9,4 @@ from django.apps import AppConfig
 class SymantecVipConfig(AppConfig):
     """Application configuration."""
 
-    name = 'django_otp_vip'
+    name = 'otp_vip'

@@ -20,7 +20,7 @@ import time
 # For error handling
 import zeep
 
-from django_otp_vip import api
+from otp_vip import api
 
 from django.contrib.auth.models import User
 
@@ -97,6 +97,8 @@ def update_user_record(info_from_api):
     return False
   except TypeError as te:
     logger.debug('update_user_record received invalid data, expecting a dictionary, received {0}'.format(info_from_api))
+  except KeyError as ke:
+    logger.debug('Couldn\'t determine user from API data. ({0})'.format(info_from_api))
     return False
 
   try:
@@ -198,7 +200,11 @@ def poll_user_auth_push(transaction):
     except zeep.exceptions.ValidationError as zevee:
       logger.debug("Data Validation error: %s" % zevee)
       still_waiting = False
-      result = False
+      return False
+    except zeep.exceptions.XMLSyntaxError as xse:
+      logger.debug("Data retrieved from API was invalid. {0}".format(xse))
+      still_waiting = False
+      return False
 
     # Should only be one item in this list
     logger.debug('Checking %s transactionStatus items' % len(query_poll_push_status.transactionStatus))

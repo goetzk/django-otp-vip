@@ -274,7 +274,6 @@ def update_user_credentials(supplied_data):
   logger.debug('Pruned tokens no longer listed in API from database')
 
   # If we made it all the way to the end of this function without errors,
-  # return True
   return True
 
 class VipPushCredential(VipBaseCredential):
