@@ -19,6 +19,7 @@ from otp_vip import forms
 
 from otp_vip import utils
 from otp_vip import credential_models
+from otp_vip import models
 
 from django_otp.forms import OTPTokenForm
 
@@ -78,36 +79,41 @@ def multi_factor(request, display_template='otp_vip/validate_vip.html'):
 
   # if this is a POST request we need to process the form data
   if request.method == 'POST':
-      logger.debug('post method')
 
       # create form instances and populate with data from the request
       # https://stackoverflow.com/a/20802107
       # https://github.com/malept/pyoath-toolkit/blob/master/examples/django/example/views.py#L116
-      push_form = PushForm(request.user, request, data=request.POST)
-      token_form  = TokenForm(request.user, request)
+      push_form = forms.PushForm(request.user, request, data=request.POST)
+      token_form  = forms.TokenForm(request.user, request, data=request.POST)
 
       logger.debug(request.POST)
 
-      logger.debug('are either forms valid?')
+      # If a token code is provided check if token is valid
+      if request.POST.get('otp_token'):
+        logger.debug("attempting to log in via pin")
+        # I see no evidence of device.verify_token being run.
+        if token_form.is_valid():
+          # If authentication succeeded, log in is ok
+          logger.debug('second factor token worked')
+          return HttpResponse('token worked')
+        else:
+          logger.debug("Second factor pin failed; %s will not be permitted to log in" % request.user)
+          # Otherwise they should not be logging in.
+          deny_login = True
 
-      # check if token is valid
-      if token_form.is_valid():
-        # If authentication succeeded, log in is ok
-        logger.debug('second factor token worked')
-        return HttpResponse('/')
-      else:
-        logger.debug("Second factor pin failed; %s will not be permitted to log in" % request.user)
-        # Otherwise they should not be logging in.
-        logout(request)
-        raise PermissionDenied("Second authentication factor failed")
-
-      # check if the push is valid
-      if push_form.is_valid():
+      # If we don't have a token assume its a push, so check if the push is valid
+      elif push_form.is_valid():
         logger.debug('second factor push worked')
         return HttpResponse('push worked')
-#       else:
-#         logger.debug('push form errors')
-#         logger.debug(push_form.errors.as_data())
+      else:
+        deny_login = True
+        logger.debug('neither auth succeeded')
+        logger.debug(token_form.errors.as_data())
+        logger.debug(push_form.errors.as_data())
+
+      if deny_login:
+        # logout(request)
+        raise PermissionDenied("Second authentication factor failed")
 
   # if a GET (or any other method) we'll create a blank form
   else:
@@ -122,9 +128,9 @@ def multi_factor(request, display_template='otp_vip/validate_vip.html'):
 
     logger.debug('creating some empty forms')
     # if some push credentials are available, show form. Otherwise don't show.
-    push_form = PushForm(request.user)
+    push_form = forms.PushForm(request.user)
     # ditto token credentials
-    token_form  = TokenForm(request.user)
+    token_form  = forms.TokenForm(request.user)
 
   return render(request, display_template, {'formpush': push_form, 'formtoken': token_form })
 
@@ -182,5 +188,4 @@ def manage_two_factor(request, template=None):
   return render(request, template, { 'remove_credentials': remove_vip_credentials,
                                               'add_token_credentials': add_vip_token_credentials,
                                               })
-
 

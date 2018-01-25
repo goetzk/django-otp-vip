@@ -44,8 +44,6 @@ class PushForm(OTPTokenForm):
         token_credentials.append((d.persistent_id, d.name))
     return token_credentials
 
-
-
 # https://docs.djangoproject.com/en/1.8/ref/forms/validation/#cleaning-and-validating-fields-that-depend-on-each-other
 class AddTokenCredential(forms.Form):
   """Add a new credential to API and user account.
@@ -85,9 +83,11 @@ class RemoveCredentials(forms.Form):
     """
     self.user = kwargs.pop('user', None)
 
-    self.creds = self.user.viptokencredential_set.all()
+    self.token_creds = self.user.viptokencredential_set.all()
+    self.push_creds = self.user.vippushcredential_set.all()
     super(RemoveCredentials, self).__init__(*args, **kwargs)
 
-    self.fields['credentials_list'].queryset = self.creds
+    # FIXME: Make it list push creds too; slightly tricky to do since i can't combine the querysets...
+    self.fields['credentials_list'].queryset = self.token_creds
 
 
