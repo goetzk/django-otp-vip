@@ -15,83 +15,6 @@ import time
 from .models import VipBaseCredential
 from otp_vip import utils
 
-def update_user_credentials(supplied_data):
-  """Update credential records in DB.
-
-def save_modified_record(record, user_obj, credential_json):
-  """Update and save credential DB entries.
-
-  Should be passed an object derived from VipBaseCredential.
-  """
-  logger.debug('About to update credential %s' % credential_json['credentialId'])
-  record.user = user_obj
-  record.credential_id = credential_json['credentialId']
-  record.credential_type = credential_json['credentialType']
-  record.credential_status = credential_json['credentialStatus']
-  record.token_form_factor = credential_json['tokenCategoryDetails']['FormFactor']
-  record.token_kind = credential_json['tokenInfo']['TokenKind']
-  record.token_adaptor = credential_json['tokenInfo']['Adapter']
-  record.token_status = credential_json['tokenInfo']['TokenStatus']
-  record.token_expiration_date = credential_json['tokenInfo']['ExpirationDate']
-  record.token_last_update = credential_json['tokenInfo']['LastUpdate']
-  record.name = '{0} (Push enabled {1})'.format(credential_json['bindingDetail']['friendlyName'], record.push_enabled)
-  record.friendly_name = credential_json['bindingDetail']['friendlyName']
-  record.bind_status = credential_json['bindingDetail']['bindStatus']
-  record.bind_time = credential_json['bindingDetail']['lastBindTime']
-  record.last_authn_time = credential_json['bindingDetail']['lastAuthnTime']
-  # Same as transaction_id?
-  record.last_authn_id = credential_json['bindingDetail']['lastAuthnId']
-
-  record.save()
-  logger.debug('Record saved')
-  return record
-
-
-def process_token_credential(user_obj, credential_json):
-  """Set up credential object ready to be saved.
-
-  This should be used to record any credential that outputs a token which can
-  be validated against the VIP API.
-  """
-  logger.debug('This is a token based credential')
-  try:
-    record = VipTokenCredential.objects.get(credential_id=credential_json['credentialId'] )
-    logger.debug('Active record is %s, based on credential %s' % (record, credential_json['credentialId']))
-  except Exception as ee:
-    logger.debug('No record found for credential %s, creating a new VipTokenCredential' % credential_json['credentialId'])
-    record = VipTokenCredential()
-    record.push_enabled = False
-
-  save_modified_record(record, user_obj, credential_json)
-
-def process_push_credential(user_obj, credential_json):
-  """Set up push credential object ready to be saved.
-
-  This should be used to record any credential that uses out of band 'push'
-  authentication to validate the user.
-  Note that credentials of this kind can also have a token generating part so
-  may appear in both credential types.
-  """
-  logger.debug('this is a push enabled credential')
-  try:
-    record = VipPushCredential.objects.get(credential_id=credential_json['credentialId'] )
-    logger.debug('Active record is %s, based on credential %s' % (record, credential_json['credentialId']))
-  except Exception as ee:
-    logger.debug('No record found for credential %s, creating a new VipPushCredential' % credential_json['credentialId'])
-    record = VipPushCredential()
-
-  # Check attributes for useful information - platform and if push is enabled (rather than simply supported)
-  for attrib in credential_json['pushAttributes']:
-    if attrib['Key'] == 'PUSH_PLATFORM':
-      record.attribute_platform = attrib['Value']
-      logger.debug('Push platform is %s' % record.attribute_platform)
-
-    if (attrib['Key'] == 'PUSH_ENABLED') :
-      record.push_enabled = attrib['Value']
-      logger.debug('Push enabled value is %s' % record.push_enabled)
-
-  save_modified_record(record, user_obj, credential_json)
-
 def save_modified_record(record, user_obj, credential_json):
   """Update and save credential DB entries.
 
@@ -210,64 +133,10 @@ def update_user_credentials(supplied_data):
     if current_credential['pushAttributes']:
       push_cred = process_push_credential(user, current_credential)
 
-    logger.debug('Working with credential %s' % current_credential['credentialId'])
-    credentials_list.append(current_credential['credentialId'])
-
-    # Only push capable platforms have values in pushAttributes
-    if current_credential['pushAttributes']:
-      push_cred = process_push_credential(user, current_credential)
-
     # I surmise this value roughly equates to 'has a token generating component'
     if current_credential['tokenInfo']['Adapter']:
       token_cred = process_token_credential(user, current_credential)
 
-    try:
-      # logger.debug('in try')
-      if push_enabled_credential:
-        logger.debug('this is a push_enabled_credential')
-        record = VipPushCredential.objects.get(credential_id=current_credential['credentialId'] )
-        # logger.debug('record for push_enabled_credential retrieved: {0}'.format(record))
-      else:
-        logger.debug('this is not push enabled, so must be token')
-        record = VipTokenCredential.objects.get(credential_id=current_credential['credentialId'] )
-        logger.debug('record for token credential retrieved: {0}'.format(record))
-      # FIXME: If/else has no finally and for some reason this debug message isn't being done by coverage
-      # It is being executed by the server
-      logger.debug('Active record is %s, based on credential %s' % (record, current_credential['credentialId']))
-    except Exception as ee:
-      logger.debug('No record found for credential %s' % current_credential['credentialId'])
-
-      if push_enabled_credential:
-        logger.debug('Creating with VipPushCredential type')
-        record = VipPushCredential()
-        record.push_enabled = True
-        record.attribute_platform = push_platform
-      else: # FIXME: this may need added complexity later, like more elif checks for different credentials
-        logger.debug('Creating with VipTokenCredential type')
-        record = VipTokenCredential()
-        record.push_enabled = False
-
-    logger.debug('About to update credential %s' % current_credential['credentialId'])
-    record.user = user
-    record.credential_id = current_credential['credentialId']
-    record.credential_type = current_credential['credentialType']
-    record.credential_status = current_credential['credentialStatus']
-    record.token_form_factor = current_credential['tokenCategoryDetails']['FormFactor']
-    record.token_kind = current_credential['tokenInfo']['TokenKind']
-    record.token_adaptor = current_credential['tokenInfo']['Adapter']
-    record.token_status = current_credential['tokenInfo']['TokenStatus']
-    record.token_expiration_date = current_credential['tokenInfo']['ExpirationDate']
-    record.token_last_update = current_credential['tokenInfo']['LastUpdate']
-    # FIXME: silently failed to record on first run. bug?
-    record.friendly_name = current_credential['bindingDetail']['friendlyName']
-    record.bind_status = current_credential['bindingDetail']['bindStatus']
-    record.bind_time = current_credential['bindingDetail']['lastBindTime']
-    record.last_authn_time = current_credential['bindingDetail']['lastAuthnTime']
-    # Same as transaction_id?
-    record.last_authn_id = current_credential['bindingDetail']['lastAuthnId']
-
-    record.save()
-    logger.debug('Record saved')
   # Clean unknown tokens - this deletes any record from this user if it is missing from the API data.
   user.viptokencredential_set.exclude(credential_id__in=credentials_list).delete()
   user.vippushcredential_set.exclude(credential_id__in=credentials_list).delete()
