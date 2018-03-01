@@ -16,7 +16,7 @@ from .models import VipUser
 
 def otp_required(view=None, redirect_field_name='next', login_url=None, if_configured=True):
     """
-	  Customised version of django-otp otp_required decorator.
+    Customised version of django-otp otp_required decorator.
 
     Key changes:
     * if_configured is True by default not False
@@ -38,20 +38,20 @@ def otp_required(view=None, redirect_field_name='next', login_url=None, if_confi
 
 # FIXME: mind blown, will need to fix this later
     def test(user):
-			"""Add OTP VIP specific checks to ensure user should be using VIP."""
+      """Add OTP VIP specific checks to ensure user should be using VIP."""
         logger.debug('Checking status for {0}'.format(u))
         vip_active = False
-				try:
-					if user.vipuser.status == 'ACTIVE':
-						vip_active = True
-					else:
-						logger.debug('status is {0}, returning false'.format(user.vipuser.status))
-						vip_active = False
-				except VipUser.DoesNotExist as dne:
-					logger.debug('{0} has no VipUser object so unable to check settings'.format(user))
-					vip_active = False
+        try:
+          if user.vipuser.status == 'ACTIVE':
+            vip_active = True
+          else:
+            logger.debug('status is {0}, returning false'.format(user.vipuser.status))
+            vip_active = False
+        except VipUser.DoesNotExist as dne:
+          logger.debug('{0} has no VipUser object so unable to check settings'.format(user))
+          vip_active = False
 
-				# Finally, perform original check
+        # Finally, perform original check
         return user.is_verified() or (if_configured and _user_is_authenticated(user) and not user_has_device(user))
 
     decorator = user_passes_test(test, login_url=login_url, redirect_field_name=redirect_field_name)
