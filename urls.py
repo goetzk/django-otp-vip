@@ -7,6 +7,6 @@ from otp_vip.views import multi_factor
 
 urlpatterns = [
     url(r'^login/?$', multi_factor, name='run_multi_factor'),
-    # url(r'^check_mf_requirement$', multi_factor_check, {'multifactor_redirect': reverse_lazy('run_multi_factor'), 'direct_redirect': reverse_lazy('/') }, name='run_multifactor_requirement'),
+    # url(r'^managevip$', manage_two_factor, { 'template': 'myvip.html' }, name='manage_vip'),
     ]
 

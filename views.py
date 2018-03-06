@@ -42,27 +42,6 @@ def update_vip_user_records(info_from_api):
 
   return False
 
-#
-# @login_required
-# # name is 'run_multifactor_requirement'
-# # Note: This could be removed if moving to 'user has credential == user wants
-# # 2fa'. This allows for there to be a credential but no 2fa
-# # https://github.com/lins05/django-otp/blob/7c152ba56b3fcca6b68adfbef192a25b3ed8245f/django-otp/django_otp/decorators.py
-# # It may be worth customising the decorator to eliminate this view?
-# def multi_factor_check(request, multifactor_redirect = 'login',
-#                                   direct_redirect = '/', *args, **kwargs):
-#   """Determine if a user is able to use multiple factors.
-#
-#   Once the check has been performed, redirect user to appropriate page.
-#   """
-#   logger.debug("in multi_factor_check")
-#
-#   if utils.should_user_multifactor(request.user):
-#     logger.debug("Redirecting to multi factor page")
-#     return HttpResponseRedirect(multifactor_redirect)
-#   else:
-#     logger.debug("No multi factor, redirecting to MyITPA")
-#     return HttpResponseRedirect(direct_redirect)
 
 
 @login_required
