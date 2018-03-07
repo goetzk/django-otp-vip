@@ -1,5 +1,3 @@
-# TODO: rewrite, adding good docs along the way
-
 django_otp_vip
 ==============
 
@@ -8,9 +6,11 @@ This Django app adds Symantec VIP integration to django-otp.
 
 Install
 =======
+
 Currently only available in source form.
 
-  git clone somewhere
+  git clone https://bitbucket.org/karlg/django-otp-vip.git
+  mv django-otp-vip some_valid_django_name
 
 Dependencies can be installed with `pip -r requirements.txt` once the project
 has been cloned.
@@ -18,10 +18,10 @@ has been cloned.
 Setup
 =====
 
-django_otp_vip requires the following settings be available:
+otp_vip requires the following are available:
 
-VIP_CERTIFICATE_PUBLIC and VIP_CERTIFICATE_PRIVATE
---------------------------------------------------
+Public and Private halves of certificate to communicate with VIP
+----------------------------------------------------------------
 
 These are both extracted from a PEM file downloaded from Symantec VIP manager
 (https://manager.vip.symantec.com/). To generate the certificate navigate
@@ -30,32 +30,38 @@ Certificate.
 
 Once downloaded extract the two parts using openssl(1) or similar.
 
+By default, otp_vip looks for them in:
+- project_root/certs/user_services_public.crt
+- project_root/certs/user_services_decrypted.key
 
-VIP_WSDL_USERSERVICES_QUERY and VIP_WSDL_USERSERVICES_AUTH
-----------------------------------------------------------
+
+WSDL files for VIP User Services
+--------------------------------
 
 These can be downloaded from Symantec VIP manager
 (https://manager.vip.symantec.com/). Navigate Account -> Download Files (bottom
-right of screen) -> Web_Services_API -> VIP_UserServicesWSDL.zip . Extract the
-zip and place the files in a suitable location.
+of list on right of screen) -> Web_Services_API -> VIP_UserServicesWSDL.zip .
+Extract the zip and place the files in a suitable location.
 
 
-VIP_POLL_SLEEP_SECONDS
-----------------------
-
-How long should django_otp_vip wait between polls of the VIP endpoint when
-checking for the status of a pushed authentication request.
-The default is 10 seconds, a shorter time will lead to a quicker login for
-users.
+By default, otp_vip looks for them in:
+- project_root/wsdls/vipuserservices-auth-1.8.wsdl
+- project_root/wsdls/vipuserservices-mgmt-1.8.wsdl
+- project_root/wsdls/vipuserservices-query-1.8.wsdl
 
 
-VIP_POLL_SLEEP_MAX_COUNT
-------------------------
+Push authentication poll details
+--------------------------------
 
-How many times should django_otp_vip poll the VIP endpoint for push
-authentication before giving up on the users push.
+By default otp_vip will wait 10 seconds between polls of the VIP endpoint when
+checking the status of a pushed authentication request.
 
+The default for otp_vip is to poll the VIP endpoint for push authentication 10
+times before giving up on the users push.
 
+A shorter poll time will lead to a quicker login for users but lead to an
+increased likelyhood of hitting the maximum count (both can be overriden in
+code).
 
 
 See also
