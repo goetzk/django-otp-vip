@@ -161,7 +161,7 @@ def send_user_auth_push(email, token={}):
     logger.debug('No user supplied')
     return None
 
-  logger.debug('Attempting to send push request for user {0} with data {1}'.format( email, token))
+  logger.debug('Attempting to send push request for user {0} with optional data {1}'.format(email, token))
   auth_authenticate_user_with_push = api.authenticate_user_with_push(email, token)
   logger.debug('Checking request return code')
   if auth_authenticate_user_with_push.status == '6040':
@@ -229,6 +229,7 @@ def poll_user_auth_push(transaction):
         still_waiting = False
         result = False
 
+  logger.debug('About to return result of push validation for {0}: {1}'.format(push.transactionId, result))
   # At the end of the loop return the result
   return result
 

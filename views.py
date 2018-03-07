@@ -43,9 +43,8 @@ def update_vip_user_records(info_from_api):
   return False
 
 
-
-@login_required
 # Name is 'run_multi_factor'
+@login_required
 def multi_factor(request, display_template='otp_vip/validate_vip.html'):
   """Perform second factor.
 
@@ -54,7 +53,6 @@ def multi_factor(request, display_template='otp_vip/validate_vip.html'):
   """
   logger.debug('In multi_factor view')
   display_template = 'otp_vip/validate_vip.html'
-  logger.debug('using template {0}'.format(display_template))
 
   # if this is a POST request we need to process the form data
   if request.method == 'POST':
@@ -86,7 +84,7 @@ def multi_factor(request, display_template='otp_vip/validate_vip.html'):
         return HttpResponse('push worked')
       else:
         deny_login = True
-        logger.debug('neither auth succeeded')
+        logger.debug('Neither auth succeeded')
         logger.debug(token_form.errors.as_data())
         logger.debug(push_form.errors.as_data())
 
