@@ -6,7 +6,7 @@ These views aim to aid in deploying a VIP compatible app.
 from __future__ import unicode_literals
 
 from django.shortcuts import render
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import Http404, HttpResponse, HttpResponseRedirect
 
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
@@ -135,7 +135,11 @@ def manage_two_factor(request, template=None):
   """
   add_vip_token_credentials = None
   remove_vip_credentials = None
-  users_vip_record = models.VipUser.objects.get(user=request.user)
+  try:
+    users_vip_record = models.VipUser.objects.get(user=request.user)
+  except models.VipUser.DoesNotExist as dne:
+    logger.debug('{0} does not have a VipUser object. Are they permitted here?'.format(request.user))
+    raise Http404
 
   # Only process posts if _something_ was included (CSRF token is always included)
   if request.method == "POST" and len(request.POST) > 1:
