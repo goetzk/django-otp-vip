@@ -16,6 +16,8 @@ from django.core.exceptions import PermissionDenied
 from django_otp.decorators import otp_required
 from django_otp import _handle_auth_login
 
+import requests
+
 from otp_vip import forms
 
 from otp_vip import utils
@@ -98,11 +100,18 @@ def multi_factor(request, display_template='otp_vip/validate_vip.html'):
         # logout(request)
         raise PermissionDenied("Second authentication factor failed")
 
-  # if a GET (or any other method) we'll create a blank form
+  # If a GET (or any other method) we'll create a blank form
   else:
-    # 'next' is only available via GET, if we want it in our POST data we need to add it
+    # 'next' is only available via GET, if we want it in our POST data we need
+    # to add it here.
     if request.GET.get('next'):
       going_to = request.GET.get('next')
+    # This plays second fiddle to request[next] because it might be left over
+    # from an earlier log in but they will always want next to be, uh, next.
+    # When chained login -> otp -> result that is impossible, but when otp is
+    # only required for subsets of a site this will be needed.
+    elif request.session['final_destination']:
+      going_to = request.session.get('final_destination')
     else:
       going_to = '/myitpa/'
 
@@ -180,4 +189,28 @@ def manage_two_factor(request, template=None):
   return render(request, template, { 'remove_credentials': remove_vip_credentials,
                                               'add_token_credentials': add_vip_token_credentials,
                                               })
+
+@login_required
+@otp_required(if_configured=True)
+def check_verification(request):
+  """Stub view so we can run otp_required with if_configured=True.
+
+  Django-OTP doesn't support an optional second factor login (like
+  if_configured=True) for its authentication forms. Because of this, the
+  suggested work around is to handle it in a separate view - for us, this is
+  the view.
+
+  So this should be used when you want people with otp configured to always use
+  it, and those without it configured to never use it.
+
+  As you can see from the code, request.session['final_destination'] is assumed
+  to exist - I am using it to store the value of request.GET.get('next') so I can
+  use it through multiple views.
+  """
+  # All multi factor magic is done via @otp_required then we log they're done and redirect.
+  redirect_destination = request.session.get('final_destination', u'/')
+
+  logger.debug('Redirecting {0} to {1}'.format(request.user, redirect_destination))
+
+  return HttpResponseRedirect(redirect_destination)
 
