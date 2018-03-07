@@ -14,6 +14,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 
 from django_otp.decorators import otp_required
+from django_otp import _handle_auth_login
 
 from otp_vip import forms
 
@@ -72,9 +73,10 @@ def multi_factor(request, display_template='otp_vip/validate_vip.html'):
         logger.debug("attempting to log in via pin")
         # I see no evidence of device.verify_token being run.
         if token_form.is_valid():
-          # If authentication succeeded, log in is ok
-          logger.debug('second factor token worked')
-          return HttpResponse('token worked')
+          logger.debug('second factor token worked using {0}'.format(request.user.otp_device))
+          # Persist login using same method as used by upstreams user_logged_in signal handler
+          _handle_auth_login('', request, request.user)
+          return HttpResponseRedirect(final_destination)
         else:
           logger.debug("Second factor pin failed; %s will not be permitted to log in" % request.user)
           # Otherwise they should not be logging in.
@@ -82,8 +84,10 @@ def multi_factor(request, display_template='otp_vip/validate_vip.html'):
 
       # If we don't have a token assume its a push, so check if the push is valid
       elif push_form.is_valid():
-        logger.debug('second factor push worked')
-        return HttpResponse('push worked')
+        logger.debug('second factor push worked using {0}'.format(request.user.otp_device))
+        # Persist login using same method as used by upstreams user_logged_in signal handler
+        _handle_auth_login('', request, request.user)
+        return HttpResponseRedirect(final_destination)
       else:
         deny_login = True
         logger.debug('Neither auth succeeded')
