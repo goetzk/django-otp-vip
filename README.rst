@@ -15,6 +15,8 @@ Currently only available in source form.
 Dependencies can be installed with `pip -r requirements.txt` once the project
 has been cloned.
 
+Add to your projects INSTALLED_APPS and run migrations as required.
+
 Setup
 =====
 
@@ -63,6 +65,11 @@ A shorter poll time will lead to a quicker login for users but lead to an
 increased likelyhood of hitting the maximum count (both can be overriden in
 code).
 
+OTP_LOGIN_URL
+-------------
+
+Ensure OTP_LOGIN_URL is set to the location of the login view provided in this
+project, we suggest '/vip/login'.
 
 See also
 ========
