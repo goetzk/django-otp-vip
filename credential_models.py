@@ -115,27 +115,27 @@ def update_user_credentials(supplied_data):
     logger.debug('Nothing supplied ({0})'.format(supplied_data))
     return False
 
-  if not user_credentials:
-    logger.debug('No credentials to update')
-    return True
-
   if not user:
     logger.debug('Unable to create or update credential without user object')
     return False
 
-  credentials_list = []
-  logger.debug('looping %s credentials' % len(user_credentials))
-  for current_credential in user_credentials:
-    logger.debug('Working with credential %s' % current_credential['credentialId'])
-    credentials_list.append(current_credential['credentialId'])
+  if user_credentials:
+    credentials_list = []
+    logger.debug('looping %s credentials' % len(user_credentials))
+    for current_credential in user_credentials:
+      logger.debug('Working with credential %s' % current_credential['credentialId'])
+      credentials_list.append(current_credential['credentialId'])
 
-    # Only push capable platforms have values in pushAttributes
-    if current_credential['pushAttributes']:
-      push_cred = process_push_credential(user, current_credential)
+      # Only push capable platforms have values in pushAttributes
+      if current_credential['pushAttributes']:
+        push_cred = process_push_credential(user, current_credential)
 
-    # I surmise this value roughly equates to 'has a token generating component'
-    if current_credential['tokenInfo']['Adapter']:
-      token_cred = process_token_credential(user, current_credential)
+      # I surmise this value roughly equates to 'has a token generating component'
+      if current_credential['tokenInfo']['Adapter']:
+        token_cred = process_token_credential(user, current_credential)
+  else:
+    logger.debug('No credentials to update')
+    return True
 
   # Clean unknown tokens - this deletes any record from this user if it is missing from the API data.
   user.viptokencredential_set.exclude(credential_id__in=credentials_list).delete()
