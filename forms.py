@@ -22,7 +22,7 @@ class TokenForm(OTPTokenForm):
     for d in devices_for_user(user):
       # This credential is not a push token
       if not d.is_interactive():
-        token_credentials.append((d.persistent_id, d.name))
+        token_credentials.append((d.persistent_id, d.friendly_name))
     return token_credentials
 
 
@@ -41,7 +41,7 @@ class PushForm(OTPTokenForm):
     for d in devices_for_user(user):
       # This credential is a push token
       if d.is_interactive():
-        token_credentials.append((d.persistent_id, d.name))
+        token_credentials.append((d.persistent_id, d.friendly_name))
     return token_credentials
 
 # https://docs.djangoproject.com/en/1.8/ref/forms/validation/#cleaning-and-validating-fields-that-depend-on-each-other
