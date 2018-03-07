@@ -157,11 +157,10 @@ def manage_two_factor(request, template=None):
         token_credential_updated = credential_models.update_user_credentials(utils.query_user_info(request.user.email))
 
     if request.POST.has_key('credentials_list'):
-      print 'credentials_list'
       remove_vip_credentials = forms.RemoveCredentials(request.POST, user = request.user)
       if remove_vip_credentials.is_valid():
         for removing_device in remove_vip_credentials.cleaned_data['credentials_list']:
-          print 'removing %s' % removing_device
+          logger.debug('removing {0}'.format(removing_device))
           # Remove single credential
           removed_cred = utils.remove_credential_from_vip(request.user.email, removing_device.credential_id)
           if not removed_cred.status == '0000':
