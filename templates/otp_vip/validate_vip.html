@@ -7,6 +7,7 @@
 <h3>Push auth</h3>
 <form action="{% url 'run_multi_factor' %}" method="post" name="form_push_auth">
     {% csrf_token %}
+    <input type='hidden' name='next' value='{{ going_to }}' />
     <div class="form-row"> {{ formpush.otp_device.errors }}{{ formpush.otp_device.label_tag }}{{ formpush.otp_device }} </div>
     <div class="submit-row">
 			<input type="submit" value="Send push" name='otp_challenge' />
@@ -20,6 +21,7 @@
 <h3>Token auth</h3>
 <form action="{% url 'run_multi_factor' %}" method="post" name="form_token_auth">
     {% csrf_token %}
+    <input type='hidden' name='next' value='{{ going_to }}' />
     <div class="form-row"> {{ formtoken.otp_device.errors }}{{ formtoken.otp_device.label_tag }}{{ formtoken.otp_device }} </div>
     <div class="form-row"> {{ formtoken.otp_token.errors }}{{ formtoken.otp_token.label_tag }}{{ formtoken.otp_token }} </div>
     <div class="submit-row">

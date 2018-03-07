@@ -56,6 +56,8 @@ def multi_factor(request, display_template='otp_vip/validate_vip.html'):
 
   # if this is a POST request we need to process the form data
   if request.method == 'POST':
+      # This should always exist as we set it via our template.
+      final_destination = request.POST.get('next')
 
       # create form instances and populate with data from the request
       # https://stackoverflow.com/a/20802107
@@ -94,6 +96,12 @@ def multi_factor(request, display_template='otp_vip/validate_vip.html'):
 
   # if a GET (or any other method) we'll create a blank form
   else:
+    # 'next' is only available via GET, if we want it in our POST data we need to add it
+    if request.GET.get('next'):
+      going_to = request.GET.get('next')
+    else:
+      going_to = '/myitpa/'
+
 
     logger.debug('Attempting to update user details')
     full_user_details = utils.query_user_info(request.user.email)
@@ -109,7 +117,7 @@ def multi_factor(request, display_template='otp_vip/validate_vip.html'):
     # ditto token credentials
     token_form  = forms.TokenForm(request.user)
 
-  return render(request, display_template, {'formpush': push_form, 'formtoken': token_form })
+  return render(request, display_template, {'formpush': push_form, 'formtoken': token_form, 'going_to': going_to })
 
 
 @login_required
