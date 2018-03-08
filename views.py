@@ -73,9 +73,8 @@ def multi_factor(request, display_template='otp_vip/validate_vip.html'):
       # If a token code is provided check if token is valid
       if request.POST.get('otp_token'):
         logger.debug("attempting to log in via pin")
-        # I see no evidence of device.verify_token being run.
         if token_form.is_valid():
-          logger.debug('second factor token worked using {0}'.format(request.user.otp_device))
+          logger.debug('Second factor token worked using {0}'.format(request.user.otp_device))
           # Persist login using same method as used by upstreams user_logged_in signal handler
           _handle_auth_login('', request, request.user)
           return HttpResponseRedirect(final_destination)
@@ -93,8 +92,12 @@ def multi_factor(request, display_template='otp_vip/validate_vip.html'):
       else:
         deny_login = True
         logger.debug('Neither auth succeeded')
-        logger.debug(token_form.errors.as_data())
-        logger.debug(push_form.errors.as_data())
+        if token_form.errors:
+          logger.debug('Token form errors')
+          logger.debug(token_form.errors.as_data())
+        if push_form.errors:
+          logger.debug('Push form errors')
+          logger.debug(push_form.errors.as_data())
 
       if deny_login:
         # logout(request)
