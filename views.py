@@ -24,8 +24,6 @@ from otp_vip import utils
 from otp_vip import credential_models
 from otp_vip import models
 
-from django_otp.forms import OTPTokenForm
-
 import logging
 logger = logging.getLogger(__name__)
 
@@ -84,11 +82,18 @@ def multi_factor(request, display_template='otp_vip/validate_vip.html'):
           deny_login = True
 
       # If we don't have a token assume its a push, so check if the push is valid
-      elif push_form.is_valid():
-        logger.debug('second factor push worked using {0}'.format(request.user.otp_device))
-        # Persist login using same method as used by upstreams user_logged_in signal handler
-        _handle_auth_login('', request, request.user)
-        return HttpResponseRedirect(final_destination)
+      elif request.POST.get('otp_challenge'):
+        logger.debug('Attempting to log in via push')
+        if push_form.is_valid():
+          # OTPAuthenticationFormMixin doesn't set otp_device for interactive
+          # devices
+          requesting_device = request.POST.get('otp_device')
+          current_cred = credential_models.VipPushCredential.objects.get(id=requesting_device.split('/')[1])
+          request.user.otp_device = current_cred
+          logger.debug('Second factor push worked using {0}'.format(request.user.otp_device))
+          # Persist login using same method as used by upstreams user_logged_in signal handler
+          _handle_auth_login('', request, request.user)
+          return HttpResponseRedirect(final_destination)
       else:
         deny_login = True
         logger.debug('Neither auth succeeded')
