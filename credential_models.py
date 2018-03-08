@@ -174,12 +174,12 @@ class VipPushCredential(VipBaseCredential):
       self.save(update_fields=['latest_transaction_id'])
       # Perform verification during challenge. Other option is overriding parts
       # of the submission form and this is, well, not better but acceptable
-      self.verify_token()
+      verification_result = self.poll_push()
       return str('Sent (Check your device).')
     else:
       return str('An error occurred trying to send the push')
 
-  def verify_token(self, *args):
+  def poll_push(self, *args):
     """Poll Symantec VIP service for a response to the push request."""
     if args:
       logger.debug('Unexpected arguments: {0}, skipping validation against this credential'.format(args))
@@ -194,7 +194,8 @@ class VipPushCredential(VipBaseCredential):
 
     logger.debug('Running poll_user_auth_push with transaction ID %s' % self.latest_transaction_id)
     # This returns True or False depending on the result
-    return utils.poll_user_auth_push(self.latest_transaction_id)
+    poll_result = utils.poll_user_auth_push(self.latest_transaction_id)
+    return poll_result
 
 
 class VipTokenCredential(VipBaseCredential):
