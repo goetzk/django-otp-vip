@@ -9,8 +9,7 @@ Install
 
 Currently only available in source form.
 
-  git clone https://bitbucket.org/karlg/django-otp-vip.git
-  mv django-otp-vip some_valid_django_name
+  git clone https://gitlab.com/goetzk/django-otp-vip.git otp_vip
 
 Dependencies can be installed with `pip -r requirements.txt` once the project
 has been cloned.
@@ -70,6 +69,36 @@ OTP_LOGIN_URL
 
 Ensure OTP_LOGIN_URL is set to the location of the login view provided in this
 project, we suggest '/vip/login'.
+
+
+Features
+========
+
+Support for API calls required to
+* Add/remove users
+* Add/remove credentials
+* Authenticate using push and tokens
+
+Helper views to:
+* Provide basic self service to users including adding/removing credentials
+* Provide optional second factor - Only use VIP as where needed
+* Require second factor check via middleware.
+
+Usage
+=====
+Update your url patterns to include an entry such as this (which provides the
+'vip/login' suggested above).
+
+    url('^vip/', include('otp_vip.urls')),
+
+
+Contributing
+============
+
+This project is hosted on GitLab (https://gitlab.com/goetzk/django-otp-vip),
+with a public mirror on GitHub (https://github.com/goetzk/django-otp-vip) for
+those who prefer it.
+
 
 See also
 ========
