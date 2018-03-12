@@ -97,6 +97,7 @@ def update_user_record(info_from_api):
     return False
   except TypeError as te:
     logger.debug('update_user_record received invalid data, expecting a dictionary, received {0}'.format(info_from_api))
+    return False
   except KeyError as ke:
     logger.debug('Couldn\'t determine user from API data. ({0})'.format(info_from_api))
     return False
