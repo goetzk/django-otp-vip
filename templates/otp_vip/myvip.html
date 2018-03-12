@@ -1,0 +1,77 @@
+{% extends "default.html" %}
+
+{% block title %}Configure 2 factor authentication{% endblock %}
+
+{% block content %}
+
+	<article class="t-pages-page">
+
+		<div class="page-header">
+			<h1>
+      Symantec VIP integration
+			</h1>
+		</div>
+
+		<div class="t-pages-page-body">
+
+			{% if request.user.is_authenticated %}
+
+				<p>
+					Hi {{ request.user.first_name }},
+				</p>
+
+          <p>The details of your currently registered credentials are listed below</p>
+          {% if user.vipuser.bindings_count %}
+          <h2>Your current devices</h2>
+            {% if remove_credentials.errors %}
+              {{ remove_credentials.errors }}
+            {% endif %}
+            {% if remove_credentials.non_field_errors %}
+              {{ remove_credentials.non_field_errors }}
+            {% endif %}
+
+            <form action="{% url 'manage_vip' %}" method="post" name='form_name_remove'>
+              {% csrf_token %}
+              {{ remove_credentials }}
+              <br><input type="submit" value="Remove selected credentials" />
+            </form>
+          {% else %}
+            <br>
+            <p> <b>You must add a credential before you can use two factor authentication.</b> To download the VIP clients visit <a href="https://vip.symantec.com">Symantec</a> and hit 'Download'.  </p>
+          {% endif %} {# if user has bindings #}
+
+        <h2> Add new credential </h2>
+
+        {# FIXME: non field still displays when there are field specific errors #}
+        {% if add_token_credentials.non_field_errors and not add_token_credentials.errors %}
+          {{ add_token_credentials.non_field_errors }}
+        {% endif %}
+
+          <p>Remember, 'Name' is how you will see the credential presented in the UI. 'ID' is the credentials unique identifier<p>
+          <form action="{% url 'manage_vip' %}" method="post" name='form_name_add'>
+          {% csrf_token %}
+             {{ add_token_credentials }}
+             <br><input type="submit" value="Add new credential" />
+          </form>
+
+
+        <h2> Your current details</h2>
+
+        <ul>
+        <li>Logged in as: {{ user }}</li>
+        {% if user.vipuser %} {# if user is vipuser #}
+          <li>VIP account key: {{ user.vipuser.vip_user_id }}</li>
+          <li>VIP account status: {{ user.vipuser.status }}</li>
+          <li>Credential used to log in: {{ user.otp_device }}</li>
+        {% else %}
+          <li>No other details to display.</li>
+        {% endif %} {# end if user is vipuser #}
+        </ul>
+
+			{% endif %} {# if authenticated #}
+
+		</div>
+
+	</article>
+
+{% endblock %}
