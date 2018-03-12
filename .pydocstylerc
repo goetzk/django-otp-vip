@@ -1,0 +1,6 @@
+# http://www.pydocstyle.org/en/2.1.1/snippets/config.html?highlight=configuration
+[pydocstylerc]
+# Exclude migrations folder (the regex is 'match anything but migrations')
+# Apparently works in a newer version, https://github.com/PyCQA/pydocstyle/issues/175
+match-dir="^(?!migrations).*"
+

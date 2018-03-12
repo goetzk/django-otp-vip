@@ -1,0 +1,17 @@
+# http://pytest-cov.readthedocs.io/en/latest/config.html
+
+[run]
+omit =
+  tests/*
+  migrations/*
+branch = True
+source = otp_vip
+
+[report]
+# Slowly work this up to 100%
+fail_under = 70
+# show lines of uncovered statements
+show_missing = True
+# Hide files with 100% coverage (for whatever reason they are 100%)
+skip_covered = True
+
