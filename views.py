@@ -135,7 +135,7 @@ def multi_factor(request, display_template='otp_vip/validate_vip.html'):
 
 @login_required
 @otp_required(if_configured=True)
-def manage_two_factor(request, template=None):
+def manage_two_factor(request, *args, **kwargs):
   """Stub credential management page for users.
 
   This is a basic page to 'get things going', its expected to be replaced by
@@ -186,7 +186,7 @@ def manage_two_factor(request, template=None):
 
 # TODO: include update_vip_user_records here?
 
-  return render(request, template, { 'remove_credentials': remove_vip_credentials,
+  return render(request, kwargs['template'], { 'remove_credentials': remove_vip_credentials,
                                               'add_token_credentials': add_vip_token_credentials,
                                               })
 
