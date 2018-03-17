@@ -1,40 +1,57 @@
 <html>
+<head>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Symantec VIP sign in page</title>
+  <meta charset="UTF-8">
+  <link href="{{ THEME_URL }}media/css/style.css" rel="stylesheet">
+</head>
 
-  {# TODO: check if there are devices that will work with the two types of forms? #}
 <body>
 
-{% if formpush %}
-<h3>Push auth</h3>
-<form action="{% url 'run_multi_factor' %}" method="post" name="form_push_auth">
-    {% csrf_token %}
-    <input type='hidden' name='next' value='{{ going_to }}' />
-    <div class="form-row"> {{ formpush.otp_device.errors }}{{ formpush.otp_device.label_tag }}{{ formpush.otp_device }} </div>
-    <div class="submit-row">
-			<input type="submit" value="Send push" name='otp_challenge' />
-    </div>
-</form>
+  <img src="{{ THEME_URL }}media/img/SYM_VIP_3L_RGB.png" alt='Logo of Symantec VIP' id='vip-image' float='left'>
 
-{% endif %}
+  {# TODO: check if there are devices that will work with the two types of forms? #}
+  <div> {# full page wrap div #}
+    {# TODO: check if there are devices that will work with the two types of forms? #}
+    {% if formpush %}
+    <h3>Push auth</h3>
+    <form action="{% url 'run_multi_factor' %}" method="post" name="form_push_auth">
+        {% csrf_token %}
+        <input type='hidden' name='next' value='{{ going_to }}' />
+        <div class="form-row"> {{ formpush.otp_device.errors }}{{ formpush.otp_device.label_tag }}{{ formpush.otp_device }} </div>
+        <div class="submit-row">
+          <input type="submit" value="Send push" name='otp_challenge' />
+        </div>
+    </form>
 
+    {% endif %}
+    </div> {# form push div #}
 
-{% if formtoken %}
-<h3>Token auth</h3>
-<form action="{% url 'run_multi_factor' %}" method="post" name="form_token_auth">
-    {% csrf_token %}
-    <input type='hidden' name='next' value='{{ going_to }}' />
-    <div class="form-row"> {{ formtoken.otp_device.errors }}{{ formtoken.otp_device.label_tag }}{{ formtoken.otp_device }} </div>
-    <div class="form-row"> {{ formtoken.otp_token.errors }}{{ formtoken.otp_token.label_tag }}{{ formtoken.otp_token }} </div>
-    <div class="submit-row">
-			<input type="submit" value="Validate code" />
-    </div>
-</form>
-{% endif %}
+    <div>
+    {% if formtoken %}
+    <h3>Token auth</h3>
+    <form action="{% url 'run_multi_factor' %}" method="post" name="form_token_auth">
+        {% csrf_token %}
+        <input type='hidden' name='next' value='{{ going_to }}' />
+        <div class="form-row"> {{ formtoken.otp_device.errors }}{{ formtoken.otp_device.label_tag }}{{ formtoken.otp_device }} </div>
+        <div class="form-row"> {{ formtoken.otp_token.errors }}{{ formtoken.otp_token.label_tag }}{{ formtoken.otp_token }} </div>
+        <div class="submit-row">
+          <input type="submit" value="Validate code" />
+        </div>
+    </form>
+    {% endif %}
+    </div> {# form token div #}
 
-{% if not formpush and not formtoken %}
-<p>No multi factor options enabled. You have been logged in, but please <a href="/contact/">Contact us</a> for assistance</p>
-{% else %}
-<p>Lost your credential? <a href="/contact/">Contact us</a> for assistance.</p>
-{% endif %}
+    <div>
+    {% if not formpush and not formtoken %}
+    <p>No multi factor options enabled. You have been logged in, but please <a href="/contact/">Contact us</a> for assistance</p>
+    {% else %}
+    <p>Lost your credential? <a href="/contact/">Contact us</a> for assistance.</p>
+    {% endif %}
+    </div>{# neither form available div #}
+
+  </div> {# full page wrap div #}
 
 </body>
 

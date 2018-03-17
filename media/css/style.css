@@ -1,0 +1,10 @@
+/* Ref SymantecVIP_IDGuide_FINAL2_110412.pdf for Symantec requirements */
+#vip-image {
+  width: 300px;
+  /* Minimum permitted padding is 50% of height */
+  margin: 60px;
+  margin-left: 0px;
+  background: white;
+  }
+
+
