@@ -54,10 +54,16 @@ class MandatoryOtpMiddleware(object):
     # A select few views can't be captured. For example
     # * Logout means we can never leave the site
     # * OTP login means a redirect loop when viewing the otp login url.
-    if current_url in self.excluded_urls_list:
-      logger.debug('Currently requested url ({0}) is in excluded urls list ({1})'.format(current_url, self.excluded_urls_list))
-      return None
+    # if current_url in self.excluded_urls_list:
+    # FIXME: This is really poor and should be fixed. Something like
+    # https://stackoverflow.com/a/30197797 will help, but this is still a hack.
+    for exclude_url in self.excluded_urls_list:
+      test_result = current_url.find(exclude_url)
+      if test_result >= 0:
+        logger.debug('Currently requested url ({0}) matches {1} in excluded urls list ({2})'.format(current_url, exclude_url, self.excluded_urls_list))
+        return None
 
+    logger.debug('{0} visited {1} which is not excluded'.format(request.user, current_url))
     # Only need to check in more detail if they are logged in
     if _user_is_authenticated(request.user):
       # Run our checks and redirect code, it lives apart to be easily overridden.
