@@ -92,14 +92,6 @@ Update your url patterns to include an entry such as this (which provides the
     url('^vip/', include('otp_vip.urls')),
 
 
-Contributing
-============
-
-This project is hosted on GitLab (https://gitlab.com/goetzk/django-otp-vip),
-with a public mirror on GitHub (https://github.com/goetzk/django-otp-vip) for
-those who prefer it.
-
-
 Tests
 =====
 
@@ -115,3 +107,21 @@ django-otp (though currently lacks plugable modules like this one....)
 python-vipaccess if you would like to avoid using Symantecs client software.
  - https://github.com/dlenski/python-vipaccess
 
+
+
+Contributing
+============
+
+This project is hosted on GitLab (https://gitlab.com/goetzk/django-otp-vip),
+with a public mirror on GitHub (https://github.com/goetzk/django-otp-vip) for
+those who prefer it.
+
+
+Contact
+=======
+
+For issues/comments/discussion related to this software, please use the issue
+tracker. GitLab is preferred (and supports GitHub as a login source) but issues
+on GitHub will also be accepted.
+
+For queries regarding professional services, please contact medeopolis@gmail.com.
