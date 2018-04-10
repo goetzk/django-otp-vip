@@ -75,14 +75,14 @@ Features
 ========
 
 Support for API calls required to
-* Add/remove users
-* Add/remove credentials
-* Authenticate using push and tokens
+ * Add/remove users
+ * Add/remove credentials
+ * Authenticate using push and tokens
 
 Helper views to:
-* Provide basic self service to users including adding/removing credentials
-* Provide optional second factor - Only use VIP as where needed
-* Require second factor check via middleware.
+ * Provide basic self service to users including adding/removing credentials
+ * Provide optional second factor - Only use VIP as where needed
+ * Require second factor check via middleware.
 
 Usage
 =====
@@ -101,11 +101,12 @@ shouldn't be relied upon yet (Coverage from enabled tests is 50.85%).
 See also
 ========
 
-django-two-factor-authentication may be of interest if you are trying to use
-django-otp (though currently lacks plugable modules like this one....)
-
-python-vipaccess if you would like to avoid using Symantecs client software.
- - https://github.com/dlenski/python-vipaccess
+Related software which may be of interest:
+ * django-two-factor-authentication may be of interest if you are trying to use 
+   django-otp (though currently lacks plugable modules like this one....)
+   https://github.com/Bouke/django-two-factor-auth
+ * python-vipaccess if you would like to avoid using Symantecs client software.
+   https://github.com/dlenski/python-vipaccess
 
 
 
