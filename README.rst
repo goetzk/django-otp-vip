@@ -32,8 +32,8 @@ Certificate.
 Once downloaded extract the two parts using openssl(1) or similar.
 
 By default, otp_vip looks for them in:
-- project_root/certs/user_services_public.crt
-- project_root/certs/user_services_decrypted.key
+ - project_root/certs/user_services_public.crt
+ - project_root/certs/user_services_decrypted.key
 
 
 WSDL files for VIP User Services
@@ -46,9 +46,9 @@ Extract the zip and place the files in a suitable location.
 
 
 By default, otp_vip looks for them in:
-- project_root/wsdls/vipuserservices-auth-1.8.wsdl
-- project_root/wsdls/vipuserservices-mgmt-1.8.wsdl
-- project_root/wsdls/vipuserservices-query-1.8.wsdl
+ - project_root/wsdls/vipuserservices-auth-1.8.wsdl
+ - project_root/wsdls/vipuserservices-mgmt-1.8.wsdl
+ - project_root/wsdls/vipuserservices-query-1.8.wsdl
 
 
 Push authentication poll details
