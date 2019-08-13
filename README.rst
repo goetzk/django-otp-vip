@@ -29,12 +29,16 @@ These are both extracted from a PEM file downloaded from Symantec VIP manager
 Account ->  Manage VIP Certificates (right hand side of screen) -> Request a
 Certificate.
 
-Once downloaded extract the two parts using openssl(1) or similar.
+To create user_services_public.crt
+ * extract the top certificate from the pem file and save it separately.
+
+To create user_services_decrypted.key 
+ * extract the bottom section from the pem file (Its marked "Encrypted")
+ * openssl rsa -in manual_encrypted.key -out user_services_decrypted.key 
 
 By default, otp_vip looks for them in:
  - project_root/certs/user_services_public.crt
  - project_root/certs/user_services_decrypted.key
-
 
 WSDL files for VIP User Services
 --------------------------------
